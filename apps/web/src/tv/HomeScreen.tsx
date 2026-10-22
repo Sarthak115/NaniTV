@@ -17,11 +17,19 @@ function greeting(h: number, hi: boolean) {
   return hi ? 'Shubh sandhya' : 'Good evening';
 }
 
+export interface MedItem {
+  key: string;
+  title: string;
+  at: Date;
+  status: 'upcoming' | 'pending' | 'taken' | 'missed';
+}
+
 interface Props {
   household: Household;
   unread: number;
   total: number;
   checkins: Checkin[];
+  meds: MedItem[];
   banner: string | null;
   focusMessages: number; // bump to move focus to Messages (new message arrived)
   onOk: () => void;
@@ -74,6 +82,18 @@ export default function HomeScreen(p: Props) {
             : hi
               ? 'Parivaar aapke saath hai ❤️'
               : 'Your family is with you ❤️'}
+        </div>
+      )}
+
+      {p.meds.length > 0 && (
+        <div className="home-meds">
+          <span className="home-meds-label">💊 {hi ? 'Aaj ki dawai' : "Today's medicine"}</span>
+          {p.meds.slice(0, 5).map((m) => (
+            <span key={m.key} className={`home-med ${m.status}`}>
+              {m.status === 'taken' ? '✓' : m.status === 'missed' ? '✗' : '○'} {m.title}{' '}
+              {m.at.toLocaleTimeString('en-IN', { timeZone: p.household.timezone, hour: 'numeric', minute: '2-digit' })}
+            </span>
+          ))}
         </div>
       )}
 

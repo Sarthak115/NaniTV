@@ -85,3 +85,12 @@ Dev machine: Windows 11, Android Studio, Java 17, Gradle 8.11.1, AGP 8.7.3.
 - Severity: Minor (dev only; production is HTTPS on Vercel)
 - Workaround used: A second Vite server in `--mode phone` with `@vitejs/plugin-basic-ssl` on `https://<laptop-ip>:5174`. The TV keeps plain HTTP on `:5173`, and its QR code points phones to the HTTPS origin via `VITE_FAMILY_URL`. Also a `getRandomValues`-based UUID helper.
 - Actionable suggestion: (Fire TV dev docs) mention this when recommending "load your LAN dev server in the WebView" for apps with a phone companion.
+
+### FL-10: Supabase Realtime doesn't deliver DELETE events through a column filter
+- Task attempted: Remove a deleted medicine reminder live on the phone and the TV.
+- Steps taken: `postgres_changes` with `event: '*'` and `filter: household_id=eq.<id>` on `reminders`.
+- Expected: INSERT, UPDATE and DELETE all arrive.
+- Actual: INSERT/UPDATE arrive. DELETE doesn't, because the old row only carries the primary key unless `REPLICA IDENTITY FULL` is set, so the filter can't match. This is in the docs, but easy to miss.
+- Severity: Minor
+- Workaround used: Remove the row locally after a successful delete, and steer families to the "On/Off" toggle (an UPDATE) rather than deleting.
+- Actionable suggestion: Warn at subscribe time when a filtered channel includes DELETE.

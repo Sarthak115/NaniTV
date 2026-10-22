@@ -1,7 +1,75 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { memberName } from '../lib/messages';
+import { formatClock, startOfTodayIn, todayIn, zonedToDate } from '../lib/time';
 import type { Message, Reaction } from '../lib/types';
-import type { useHouseholdData } from './useHousehold';
+import type { HouseholdData } from './useHousehold';
+
+/** Re-render every 30s so time-based alerts (check-in deadline) appear on their own. */
+function useMinuteTick() {
+  const [, set] = useState(0);
+  useEffect(() => {
+    const t = window.setInterval(() => set((n) => n + 1), 30000);
+    return () => window.clearInterval(t);
+  }, []);
+}
+
+function Alerts({ data, elder, tz }: { data: HouseholdData; elder: string; tz: string }) {
+  useMinuteTick();
+  const { household, checkins, events, reminders } = data;
+  const helps = checkins.filter((c) => c.kind === 'help');
+  const missed = events.filter((e) => e.status === 'missed');
+  const ok = checkins.some((c) => c.kind === 'ok');
+  const deadline = household ? zonedToDate(todayIn(tz), household.checkin_deadline, tz) : null;
+  const noCheckin = !!deadline && !ok && Date.now() > deadline.getTime();
+  const title = (id: string) => reminders.find((r) => r.id === id)?.title ?? 'Medicine';
+
+  return (
+    <>
+      {helps
+        .slice()
+        .reverse()
+        .map((c) => (
+          <div key={c.id} className="fam-alert big">
+            🆘 {elder} pressed "Need help" at {formatClock(c.created_at, tz)}
+            <div className="fam-small">Please call {elder} now.</div>
+          </div>
+        ))}
+      {missed.map((e) => (
+        <div key={e.id} className="fam-alert">
+          💊 {elder} missed {title(e.reminder_id)} ({formatClock(e.scheduled_for, tz)})
+          <div className="fam-small">Not marked as taken within 30 minutes.</div>
+        </div>
+      ))}
+      {noCheckin && (
+        <div className="fam-alert warn">
+          ⏰ No "I'm OK" from {elder} yet today
+          <div className="fam-small">Expected by {formatClock(deadline!, tz)}. Maybe give a call?</div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function TodayCard({ data, elder, tz }: { data: HouseholdData; elder: string; tz: string }) {
+  const ok = data.checkins.find((c) => c.kind === 'ok');
+  const title = (id: string) => data.reminders.find((r) => r.id === id)?.title ?? 'Medicine';
+  return (
+    <div className="fam-card fam-today">
+      <h2>Today with {elder}</h2>
+      <div className={`fam-status ${ok ? 'good' : ''}`}>
+        {ok ? `✅ ${elder} said "I'm OK" at ${formatClock(ok.created_at, tz)}` : `⌛ No check-in yet`}
+      </div>
+      {data.events.map((e) => (
+        <div key={e.id} className={`fam-status ${e.status === 'taken' ? 'good' : e.status === 'missed' ? 'bad' : ''}`}>
+          {e.status === 'taken' ? '✅' : e.status === 'missed' ? '❌' : '⏳'} {title(e.reminder_id)} · {formatClock(e.scheduled_for, tz)}
+          {e.status === 'taken' && e.acted_at ? ` · taken ${formatClock(e.acted_at, tz)}` : ''}
+          {e.status === 'pending' ? ' · waiting' : ''}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 const REACTION: Record<Reaction, { icon: string; label: (elder: string) => string; alert?: boolean }> = {
   got_it: { icon: '👍', label: (e) => `${e} got it` },
@@ -18,23 +86,27 @@ export function timeAgo(iso: string) {
 }
 
 interface Props {
-  data: ReturnType<typeof useHouseholdData>;
+  data: HouseholdData;
   memberId: string;
 }
 
 export default function FeedPage({ data, memberId }: Props) {
   const { household, members, messages } = data;
   const elder = household?.elder_name ?? 'Nani';
-  const callRequests = messages.filter((m) => m.reaction === 'call_me');
+  const tz = household?.timezone ?? 'Asia/Kolkata';
+  const today = startOfTodayIn(tz).getTime();
+  const callRequests = messages.filter((m) => m.reaction === 'call_me' && new Date(m.created_at).getTime() >= today);
 
   return (
     <div className="fam-feed">
+      <Alerts data={data} elder={elder} tz={tz} />
       {callRequests.length > 0 && (
         <div className="fam-alert">
           📞 {elder} asked for a call
           <span className="fam-small"> · {timeAgo(callRequests[0].created_at)}</span>
         </div>
       )}
+      <TodayCard data={data} elder={elder} tz={tz} />
 
       {messages.length === 0 ? (
         <div className="fam-card fam-empty">

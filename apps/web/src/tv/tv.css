@@ -97,7 +97,13 @@ html, body, #root { margin: 0; height: 100%; }
 /* Toast banner */
 .tv-toast {
   position: absolute;
-  top: 54px;
+  top: 330px;
+  max-width: 1500px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  z-index: 10;
   left: 50%;
   transform: translateX(-50%);
   background: var(--tv-saffron);
@@ -150,3 +156,18 @@ html, body, #root { margin: 0; height: 100%; }
 .viewer-reply.chosen { background: rgba(76, 175, 106, 0.45); }
 .viewer-hint { display: flex; gap: 64px; font-size: 40px; color: var(--tv-cream-dim); background: rgba(0, 0, 0, 0.35); padding: 8px 32px; border-radius: 999px; }
 .viewer-caption + .viewer-bottom { margin-top: 0; }
+
+/* Home medicine strip */
+.home-meds { display: flex; gap: 20px; align-items: center; justify-content: center; flex-wrap: nowrap; overflow: hidden; }
+.home-meds-label { font-size: 44px; font-weight: 700; color: var(--tv-cream-dim); white-space: nowrap; }
+.home-med { font-size: 40px; font-weight: 600; padding: 10px 28px; border-radius: 999px; background: rgba(255, 244, 220, 0.12); white-space: nowrap; }
+.home-med.taken { background: rgba(76, 175, 106, 0.4); }
+.home-med.missed { background: rgba(214, 69, 69, 0.55); }
+.home-med.pending { background: rgba(255, 159, 28, 0.45); }
+
+/* Reminder takeover */
+.takeover { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 40px; text-align: center; background: radial-gradient(ellipse at center, #1f5a3a, #0f2a1d 75%); padding: 54px 96px; }
+.takeover-pill { font-size: 200px; line-height: 1; animation: breathe 1.6s ease-in-out infinite; border-radius: 50%; }
+.takeover-title { font-size: 110px; max-width: 1700px; }
+.takeover-btn { min-width: 640px; min-height: 200px; font-size: 80px; }
+.takeover-hint { font-size: 40px; color: var(--tv-cream-dim); }

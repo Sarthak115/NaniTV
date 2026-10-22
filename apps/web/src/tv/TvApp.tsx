@@ -4,6 +4,10 @@ import PairingScreen from './PairingScreen';
 import HomeScreen from './HomeScreen';
 import MessageViewer from './MessageViewer';
 import HelpConfirm from './HelpConfirm';
+import ReminderTakeover from './ReminderTakeover';
+import { useReminderScheduler } from './useReminderScheduler';
+import { sameInstant } from '../lib/reminders';
+import type { MedItem } from './HomeScreen';
 import { useFocusGroup } from './useFocusGroup';
 import { useTvData } from './useTvData';
 import { say } from './speech';
@@ -12,7 +16,7 @@ import { supabase, supabaseConfigured } from '../lib/supabase';
 import { getOrCreateTvHousehold, listMembers } from '../lib/household';
 import { memberName } from '../lib/messages';
 import { chimeMessage } from '../lib/sound';
-import type { Checkin, Household, Message } from '../lib/types';
+import type { Checkin, Household, Message, Reminder, ReminderEvent } from '../lib/types';
 
 type Screen = 'loading' | 'error' | 'pairing' | 'home' | 'viewer' | 'help';
 
@@ -59,9 +63,44 @@ export default function TvApp() {
     [household, showToast],
   );
 
-  const data = useTvData(screen === 'loading' || screen === 'error' ? null : household, onNewMessage);
+  const ready = screen === 'loading' || screen === 'error' ? null : household;
+  const data = useTvData(ready, onNewMessage);
   membersRef.current = data.members;
   const unread = data.messages.filter((m) => !m.seen_at).length;
+
+  // Medicine reminders take over the screen (except during first-run pairing).
+  const sched = useReminderScheduler(ready);
+  const takeover = screen !== 'pairing' && ready ? sched.active : null;
+  const takeoverRef = useRef(takeover);
+  takeoverRef.current = takeover;
+
+  // Family can change the elder's name / language / deadline from the phone.
+  useEffect(() => {
+    if (!household?.id) return;
+    const db = supabase!;
+    const channel = db
+      .channel(`tv-household-${household.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'households', filter: `id=eq.${household.id}` },
+        (p) => setHousehold(p.new as Household),
+      )
+      .subscribe();
+    return () => void db.removeChannel(channel);
+  }, [household?.id]);
+
+  const onTaken = useCallback(async () => {
+    const t = takeoverRef.current;
+    if (!t || !household) return;
+    try {
+      await sched.markTaken(t.event);
+      showToast(household.language === 'hi' ? '✓ Shabash! Family ko bata diya' : '✓ Well done! Your family knows');
+      say(household, 'Shabash! Family ko bata diya.', 'Well done! Your family knows.');
+    } catch (e) {
+      console.error('markTaken failed', e);
+      showToast(household.language === 'hi' ? 'Nahi bhej paaye, phir koshish karein' : 'Could not send, try again');
+    }
+  }, [household, sched, showToast]);
 
   const load = useCallback(async () => {
     setScreen('loading');
@@ -82,6 +121,13 @@ export default function TvApp() {
   useEffect(() => {
     void load();
     console.log('[NaniTV] ttsLanguages', JSON.stringify(ttsLanguages()));
+    const a = document.createElement('audio');
+    console.log(
+      '[NaniTV] canPlay',
+      ['audio/webm; codecs="opus"', 'audio/ogg; codecs="opus"', 'audio/mp4; codecs="mp4a.40.2"', 'audio/aac']
+        .map((t) => `${t}=${a.canPlayType(t) || 'no'}`)
+        .join(' | '),
+    );
   }, [load]);
 
   // Back: sub-screens return home; home exits the app.
@@ -89,7 +135,8 @@ export default function TvApp() {
     () =>
       onBack(() => {
         const s = screenRef.current;
-        console.log('nani-back on', s);
+        console.log('nani-back on', s, takeoverRef.current ? '(reminder → snooze)' : '');
+        if (takeoverRef.current) return sched.snooze(takeoverRef.current.event);
         if (s === 'viewer' || s === 'help') return setScreen('home');
         if (s === 'pairing' && household) {
           listMembers(household.id).then((m) => (m.length ? setScreen('home') : exitApp()));
@@ -97,7 +144,8 @@ export default function TvApp() {
         }
         exitApp();
       }),
-    [household],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [household, sched.snooze],
   );
 
   const openMessages = useCallback(() => {
@@ -154,12 +202,14 @@ export default function TvApp() {
       )}
       {screen === 'error' && <ErrorScreen message={error} onRetry={load} />}
       {screen === 'pairing' && household && <PairingScreen household={household} onDone={() => setScreen('home')} />}
-      {screen === 'home' && household && (
+      {takeover && household && <ReminderTakeover household={household} active={takeover} onTaken={onTaken} />}
+      {!takeover && screen === 'home' && household && (
         <HomeScreen
           household={household}
           unread={unread}
           total={data.messages.length}
           checkins={data.checkins}
+          meds={medStrip(sched.slots, sched.events, sched.reminders)}
           banner={banner}
           focusMessages={focusMessages}
           onOk={onOk}
@@ -167,7 +217,7 @@ export default function TvApp() {
           onHelp={() => setScreen('help')}
         />
       )}
-      {screen === 'viewer' && household && (
+      {!takeover && screen === 'viewer' && household && (
         <MessageViewer
           household={household}
           members={data.members}
@@ -177,12 +227,31 @@ export default function TvApp() {
           onToast={showToast}
         />
       )}
-      {screen === 'help' && household && (
+      {!takeover && screen === 'help' && household && (
         <HelpConfirm household={household} onYes={onHelpYes} onNo={() => setScreen('home')} />
       )}
       {toast && <div className="tv-toast">{toast}</div>}
     </TvStage>
   );
+}
+
+/** Today's doses for the home strip: due/acted events plus upcoming slots. */
+function medStrip(
+  slots: ReturnType<typeof useReminderScheduler>['slots'],
+  events: ReminderEvent[],
+  reminders: Reminder[],
+): MedItem[] {
+  const items: MedItem[] = slots.map((s) => {
+    const e = events.find((x) => x.reminder_id === s.reminder.id && sameInstant(x.scheduled_for, s.at));
+    return { key: `${s.reminder.id}-${s.time}`, title: s.reminder.title, at: s.at, status: e?.status ?? 'upcoming' };
+  });
+  // Events without a current slot (e.g. reminder since paused) still show what happened today.
+  for (const e of events) {
+    if (items.some((i) => i.key.startsWith(e.reminder_id) && sameInstant(i.at, e.scheduled_for))) continue;
+    const title = reminders.find((r) => r.id === e.reminder_id)?.title ?? '💊';
+    items.push({ key: e.id, title, at: new Date(e.scheduled_for), status: e.status });
+  }
+  return items.sort((a, b) => a.at.getTime() - b.at.getTime());
 }
 
 function ErrorScreen({ message, onRetry }: { message: string; onRetry: () => void }) {
