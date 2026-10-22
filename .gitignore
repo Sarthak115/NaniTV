@@ -17,3 +17,4 @@ apps/firetv-shell/.idea/
 supabase/.temp/
 supabase/.branches/
 *.tsbuildinfo
+*.local

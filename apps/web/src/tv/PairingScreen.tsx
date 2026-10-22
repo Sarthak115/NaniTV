@@ -18,7 +18,8 @@ export default function PairingScreen({ household, onDone, enabled = true }: Pro
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<number>();
 
-  const joinUrl = `${window.location.origin}/family/join?code=${household.pair_code}`;
+  const familyOrigin = import.meta.env.VITE_FAMILY_URL || window.location.origin;
+  const joinUrl = `${familyOrigin}/family/join?code=${household.pair_code}`;
   const hi = household.language === 'hi';
 
   useEffect(() => {

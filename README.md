@@ -5,7 +5,14 @@
 - **Elder** uses only the Fire TV remote (D-pad, Select, Back).
 - **Family** uses a phone web app. There's nothing to install: open the link or scan the QR code.
 
-> Status: Phase 1 (scaffold + Fire TV shell). This README grows phase by phase.
+> Status: Phase 3 (pairing, photo/voice/text messages, AI-simplified Hindi, one-button replies). This README grows phase by phase.
+
+### TV remote controls
+| Screen | Left / Right | Up / Down | Select | Back |
+|---|---|---|---|---|
+| Home | move between *I'm OK*, *Messages*, *Need help* | — | press | exit app |
+| Message viewer | move between 👍 ❤️ 📞 replies | previous / next message | send reply | home |
+| Help confirm | Yes / No (focus starts on No) | — | press | home |
 
 ## Architecture
 
@@ -29,14 +36,29 @@
 
 ## Local development (Windows / PowerShell)
 
+### 0. Supabase + Gemini (free tiers)
+1. Create a Supabase project. In **SQL Editor**, run `supabase/migrations/0001_init.sql`, then `0002_tts_text.sql`.
+   This creates the tables, realtime, demo RLS policies and the public `media` bucket.
+2. Get a free Gemini key at https://aistudio.google.com/apikey and set it as Edge Function secrets
+   (Dashboard → Edge Functions → Secrets, or the CLI):
+```powershell
+npx supabase login
+npx supabase secrets set GEMINI_API_KEY=... GEMINI_MODEL=gemini-3.7-flash --project-ref <ref>
+npx supabase functions deploy simplify-message --project-ref <ref> --use-api
+```
+If the configured model is missing, overloaded or slow, the function falls back to other current Flash models and finally to the original text, so the demo never breaks.
+
 ### 1. Web app
 ```powershell
 cd apps/web
-copy .env.example .env      # fill in Supabase URL + anon key (Phase 2+)
+copy .env.example .env      # Supabase URL + anon key (Settings → API Keys)
 npm install
-npm run dev -- --host       # serves on http://<LAN-IP>:5173
+npm run dev -- --host       # TV:     http://<LAN-IP>:5173/tv
+npm run dev:phone -- --host # phones: https://<LAN-IP>:5174/family (self-signed; tap "proceed")
 ```
-Allow Node through Windows Firewall on **private** networks so the TV can reach it.
+Phones need the HTTPS server because browsers only allow the microphone in a secure context.
+Put `VITE_FAMILY_URL=https://<LAN-IP>:5174` in `apps/web/.env.development.local` so the TV's QR code points phones there.
+Allow Node through Windows Firewall on **private** networks so the TV and phones can reach it.
 Open `http://localhost:5173/tv` on the desktop. Arrow keys and Enter act as the remote, and Esc/Backspace acts as Back.
 
 ### 2. Fire TV shell

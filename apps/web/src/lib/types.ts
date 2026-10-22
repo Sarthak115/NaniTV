@@ -28,6 +28,8 @@ export interface Message {
   type: MessageType;
   text: string | null;
   simplified_text: string | null;
+  /** Latin-script version of simplified_text for TTS voices without Devanagari. */
+  tts_text: string | null;
   media_url: string | null;
   created_at: string;
   seen_at: string | null;

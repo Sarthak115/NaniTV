@@ -112,3 +112,41 @@ html, body, #root { margin: 0; height: 100%; }
 @keyframes toast-in { from { opacity: 0; transform: translate(-50%, -30px); } to { opacity: 1; transform: translate(-50%, 0); } }
 
 .tv-error { color: #ffb4a8; font-size: 48px; max-width: 1500px; }
+
+/* Home */
+.home { flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+.home-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 48px; }
+.home-date { font-size: 56px; color: var(--tv-cream-dim); margin-top: 12px; }
+.home-top .tv-h1 { white-space: nowrap; }
+.home-clock { font-size: 150px; font-weight: 800; line-height: 0.9; letter-spacing: -4px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.home-banner { align-self: center; font-size: 60px; font-weight: 700; background: var(--tv-saffron); color: #3b0f1f; padding: 28px 64px; border-radius: 999px; animation: toast-in 300ms ease-out; max-width: 1600px; text-align: center; }
+.home-banner.quiet { background: rgba(255, 244, 220, 0.1); color: var(--tv-cream); font-weight: 600; animation: none; }
+.home-buttons { gap: 56px; padding-bottom: 24px; }
+.home-btn { position: relative; width: 500px; min-height: 230px; font-size: 64px; }
+.home-btn.has-new { background: rgba(255, 159, 28, 0.22); }
+.home-badge { position: absolute; top: -28px; right: -28px; min-width: 88px; height: 88px; border-radius: 44px; background: var(--tv-red); color: #fff; font-size: 52px; font-weight: 800; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4); }
+
+/* Viewer */
+.viewer { position: absolute; inset: 0; padding: 54px 96px; display: flex; flex-direction: column; box-sizing: border-box; }
+.viewer-photo-bg { position: absolute; inset: -40px; background-size: cover; background-position: center; filter: blur(40px) brightness(0.45); }
+.viewer-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.viewer-head, .viewer-text, .viewer-voice, .viewer-caption, .viewer-bottom { position: relative; }
+.viewer-head { display: flex; justify-content: space-between; align-items: center; }
+.viewer-from { font-size: 60px; font-weight: 800; background: rgba(0, 0, 0, 0.35); padding: 12px 36px; border-radius: 999px; }
+.viewer-when { font-size: 40px; color: var(--tv-cream-dim); background: rgba(0, 0, 0, 0.35); padding: 10px 28px; border-radius: 999px; }
+.viewer-text { flex: 1; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 96px; font-weight: 700; line-height: 1.3; padding: 0 40px; }
+.viewer-caption { margin-top: auto; margin-bottom: 32px; align-self: center; max-width: 1600px; text-align: center; font-size: 64px; font-weight: 700; line-height: 1.25; background: rgba(0, 0, 0, 0.6); padding: 24px 48px; border-radius: 32px; }
+.viewer-voice { flex: 1; display: flex; align-items: center; justify-content: center; gap: 72px; }
+.viewer-avatar { width: 320px; height: 320px; border-radius: 50%; background: var(--tv-saffron); color: #3b0f1f; font-size: 180px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+.viewer-avatar.playing { animation: breathe 1.6s ease-in-out infinite; }
+@keyframes breathe { 50% { box-shadow: 0 0 0 40px rgba(255, 159, 28, 0.25); transform: scale(1.04); } }
+.viewer-voice-label { font-size: 80px; font-weight: 800; display: flex; flex-direction: column; gap: 32px; }
+.viewer-bars { display: flex; gap: 14px; height: 120px; align-items: center; }
+.viewer-bars span { width: 22px; height: 30px; border-radius: 11px; background: var(--tv-cream-dim); }
+.viewer-bars.on span { animation: bar 0.9s ease-in-out infinite; background: var(--tv-saffron); }
+@keyframes bar { 50% { height: 120px; } }
+.viewer-bottom { margin-top: auto; display: flex; flex-direction: column; align-items: center; gap: 20px; }
+.viewer-reply { min-width: 420px; }
+.viewer-reply.chosen { background: rgba(76, 175, 106, 0.45); }
+.viewer-hint { display: flex; gap: 64px; font-size: 40px; color: var(--tv-cream-dim); background: rgba(0, 0, 0, 0.35); padding: 8px 32px; border-radius: 999px; }
+.viewer-caption + .viewer-bottom { margin-top: 0; }

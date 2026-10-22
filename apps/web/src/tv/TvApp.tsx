@@ -1,20 +1,67 @@
-﻿import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import TvStage from './TvStage';
 import PairingScreen from './PairingScreen';
+import HomeScreen from './HomeScreen';
+import MessageViewer from './MessageViewer';
+import HelpConfirm from './HelpConfirm';
 import { useFocusGroup } from './useFocusGroup';
+import { useTvData } from './useTvData';
+import { say } from './speech';
 import { exitApp, onBack, ttsLanguages } from '../lib/native';
-import { supabaseConfigured } from '../lib/supabase';
+import { supabase, supabaseConfigured } from '../lib/supabase';
 import { getOrCreateTvHousehold, listMembers } from '../lib/household';
-import type { Household } from '../lib/types';
+import { memberName } from '../lib/messages';
+import { chimeMessage } from '../lib/sound';
+import type { Checkin, Household, Message } from '../lib/types';
 
-type Screen = 'loading' | 'error' | 'pairing' | 'home';
+type Screen = 'loading' | 'error' | 'pairing' | 'home' | 'viewer' | 'help';
 
 export default function TvApp() {
   const [screen, setScreen] = useState<Screen>('loading');
   const [household, setHousehold] = useState<Household | null>(null);
   const [error, setError] = useState('');
+  const [toast, setToast] = useState<string | null>(null);
+  const [banner, setBanner] = useState<string | null>(null);
+  const [focusMessages, setFocusMessages] = useState(0);
+  const [viewerStart, setViewerStart] = useState<string | null>(null);
+  const toastTimer = useRef<number>();
+  const bannerTimer = useRef<number>();
   const screenRef = useRef(screen);
   screenRef.current = screen;
+
+  const showToast = useCallback((text: string) => {
+    setToast(text);
+    window.clearTimeout(toastTimer.current);
+    toastTimer.current = window.setTimeout(() => setToast(null), 4000);
+  }, []);
+
+  const membersRef = useRef<ReturnType<typeof useTvData>['members']>([]);
+  const onNewMessage = useCallback(
+    (m: Message) => {
+      if (!household) return;
+      const name = memberName(membersRef.current, m.sender_id);
+      const hi = household.language === 'hi';
+      const what =
+        m.type === 'photo' ? (hi ? 'photo' : 'a photo') : m.type === 'voice' ? (hi ? 'aawaz sandesh' : 'a voice note') : hi ? 'sandesh' : 'a message';
+      const text = hi ? `${name} ne ${what} bheja` : `${name} sent ${what}`;
+      console.log('[NaniTV] new message', m.type, 'from', name);
+      chimeMessage();
+      if (screenRef.current === 'home') {
+        setBanner(text);
+        setFocusMessages((n) => n + 1);
+        window.clearTimeout(bannerTimer.current);
+        bannerTimer.current = window.setTimeout(() => setBanner(null), 20000);
+        window.setTimeout(() => say(household, `${text}. Dekhne ke liye OK dabayein.`, `${text}. Press OK to see it.`), 900);
+      } else if (screenRef.current === 'viewer') {
+        showToast(`💌 ${text} ▼`);
+      }
+    },
+    [household, showToast],
+  );
+
+  const data = useTvData(screen === 'loading' || screen === 'error' ? null : household, onNewMessage);
+  membersRef.current = data.members;
+  const unread = data.messages.filter((m) => !m.seen_at).length;
 
   const load = useCallback(async () => {
     setScreen('loading');
@@ -37,12 +84,13 @@ export default function TvApp() {
     console.log('[NaniTV] ttsLanguages', JSON.stringify(ttsLanguages()));
   }, [load]);
 
-  // Back: sub-screens return home; home / pairing-first-run exits the app.
+  // Back: sub-screens return home; home exits the app.
   useEffect(
     () =>
       onBack(() => {
         const s = screenRef.current;
         console.log('nani-back on', s);
+        if (s === 'viewer' || s === 'help') return setScreen('home');
         if (s === 'pairing' && household) {
           listMembers(household.id).then((m) => (m.length ? setScreen('home') : exitApp()));
           return;
@@ -51,6 +99,50 @@ export default function TvApp() {
       }),
     [household],
   );
+
+  const openMessages = useCallback(() => {
+    setBanner(null);
+    const firstUnread = data.messages.find((m) => !m.seen_at);
+    setViewerStart(firstUnread?.id ?? data.messages[data.messages.length - 1]?.id ?? null);
+    setScreen('viewer');
+  }, [data.messages]);
+
+  const checkin = useCallback(
+    async (kind: Checkin['kind']) => {
+      if (!household) return;
+      const { data: row, error: err } = await supabase!
+        .from('checkins')
+        .insert({ household_id: household.id, kind })
+        .select('*')
+        .single();
+      if (err) {
+        console.error('checkin failed', err);
+        showToast(household.language === 'hi' ? 'Nahi bhej paaye, phir koshish karein' : 'Could not send, try again');
+        return false;
+      }
+      data.addCheckin(row as Checkin);
+      return true;
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [household, showToast],
+  );
+
+  const onOk = useCallback(async () => {
+    if (!household) return;
+    if (await checkin('ok')) {
+      showToast(household.language === 'hi' ? '✓ Family ko bata diya ki aap theek hain' : '✓ Family knows you are OK');
+      say(household, 'Bahut accha! Family ko bata diya ki aap theek hain.', 'Wonderful! Your family knows you are OK.');
+    }
+  }, [household, checkin, showToast]);
+
+  const onHelpYes = useCallback(async () => {
+    if (!household) return;
+    setScreen('home');
+    if (await checkin('help')) {
+      showToast(household.language === 'hi' ? '🆘 Family ko khabar kar di' : '🆘 Your family has been alerted');
+      say(household, 'Family ko khabar kar di hai. Woh jaldi aapse baat karenge.', 'Your family has been alerted. They will contact you soon.');
+    }
+  }, [household, checkin, showToast]);
 
   return (
     <TvStage>
@@ -61,12 +153,34 @@ export default function TvApp() {
         </div>
       )}
       {screen === 'error' && <ErrorScreen message={error} onRetry={load} />}
-      {screen === 'pairing' && household && (
-        <PairingScreen household={household} onDone={() => setScreen('home')} />
-      )}
+      {screen === 'pairing' && household && <PairingScreen household={household} onDone={() => setScreen('home')} />}
       {screen === 'home' && household && (
-        <HomePlaceholder household={household} onAddFamily={() => setScreen('pairing')} />
+        <HomeScreen
+          household={household}
+          unread={unread}
+          total={data.messages.length}
+          checkins={data.checkins}
+          banner={banner}
+          focusMessages={focusMessages}
+          onOk={onOk}
+          onMessages={openMessages}
+          onHelp={() => setScreen('help')}
+        />
       )}
+      {screen === 'viewer' && household && (
+        <MessageViewer
+          household={household}
+          members={data.members}
+          messages={data.messages}
+          startId={viewerStart}
+          onPatch={data.patchMessage}
+          onToast={showToast}
+        />
+      )}
+      {screen === 'help' && household && (
+        <HelpConfirm household={household} onYes={onHelpYes} onNo={() => setScreen('home')} />
+      )}
+      {toast && <div className="tv-toast">{toast}</div>}
     </TvStage>
   );
 }
@@ -79,20 +193,6 @@ function ErrorScreen({ message, onRetry }: { message: string; onRetry: () => voi
       <div className="tv-error">{message}</div>
       <button className="tv-btn" {...bind('retry')}>
         Phir se <small>Try again</small>
-      </button>
-    </div>
-  );
-}
-
-// Replaced by the real home screen in Phase 3.
-function HomePlaceholder({ household, onAddFamily }: { household: Household; onAddFamily: () => void }) {
-  const { bind } = useFocusGroup(['add'], { onSelect: onAddFamily });
-  return (
-    <div className="tv-center">
-      <h1 className="tv-h1">Namaste {household.elder_name} 🙏</h1>
-      <div className="tv-sub">Home screen arrives in Phase 3</div>
-      <button className="tv-btn" {...bind('add')}>
-        Parivaar jodein <small>Add family</small>
       </button>
     </div>
   );

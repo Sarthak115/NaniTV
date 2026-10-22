@@ -67,3 +67,21 @@ Dev machine: Windows 11, Android Studio, Java 17, Gradle 8.11.1, AGP 8.7.3.
 - Severity: Minor
 - Workaround used: List all runtime deps in `optimizeDeps.include` and start with `vite --force` once.
 - Actionable suggestion: (Vite) a louder full-reload on dep re-optimisation. (Fire TV docs) recommend mirroring `console` to logcat in WebView samples, as our shell does, since the TV gives no visual error.
+
+### FL-8: Gemini model overloaded (503) / slow (>15s) during the build — needed multi-model fallback
+- Task attempted: Rewrite family messages into short, warm Hindi with the Gemini API from a Supabase Edge Function.
+- Steps taken: `GEMINI_MODEL=gemini-3.7-flash`, then `POST …:generateContent` with `responseMimeType: application/json`.
+- Expected: A response in 1–3 s.
+- Actual: The first call hung until our 15 s abort. The next returned `503 UNAVAILABLE: "This model is currently experiencing high demand"`. Before we added our own timeout, the Edge Function ran until Supabase's gateway returned `504` after about 150 s. We also lost time because the model name from the previous project (`2.5`) was retired, and the docs/examples still mention it.
+- Severity: Major (the AI feature is the visible "magic" in the demo)
+- Workaround used: `_shared/gemini.ts` tries the configured model, then asks `ListModels` for other current `*flash*` models and tries them within a 28 s budget. It caches the one that works, and the key goes in an `x-goog-api-key` header (never in the URL, so it can't leak into error strings). Thinking is turned down (`thinkingLevel: low` / `thinkingBudget: 0`). The function always falls back to the original text, and the TV reads the raw text after 2.5 s, then the AI version if it lands while the message is open. Result: `gemini-3.6-flash` answered in ~10–17 s.
+- Actionable suggestion: (Gemini) Publish a stable `-latest` alias for Flash, and return a `Retry-After` hint on 503.
+
+### FL-9: Phone microphone blocked on the LAN dev server (insecure context)
+- Task attempted: Record a voice note with `MediaRecorder` on a real phone against `http://<laptop-ip>:5173`.
+- Steps taken: Opened the family app from the TV's QR code.
+- Expected: Mic permission prompt.
+- Actual: `navigator.mediaDevices` is undefined on plain-HTTP LAN origins (only `localhost` counts as secure). `crypto.randomUUID` is missing for the same reason.
+- Severity: Minor (dev only; production is HTTPS on Vercel)
+- Workaround used: A second Vite server in `--mode phone` with `@vitejs/plugin-basic-ssl` on `https://<laptop-ip>:5174`. The TV keeps plain HTTP on `:5173`, and its QR code points phones to the HTTPS origin via `VITE_FAMILY_URL`. Also a `getRandomValues`-based UUID helper.
+- Actionable suggestion: (Fire TV dev docs) mention this when recommending "load your LAN dev server in the WebView" for apps with a phone companion.
