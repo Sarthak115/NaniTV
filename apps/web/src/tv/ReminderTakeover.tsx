@@ -51,7 +51,7 @@ export default function ReminderTakeover({
       </div>
       <button className="tv-btn success takeover-btn" {...bind('taken')}>
         ✓ {hi ? 'Le liya' : 'Taken'}
-        <small>Taken</small>
+        {hi && <small>Taken</small>}
       </button>
       <div className="takeover-hint">{hi ? 'Baad mein yaad dilayein: Back dabayein' : 'Remind me in 5 min: press Back'}</div>
     </div>

@@ -5,14 +5,29 @@
 - **Elder** uses only the Fire TV remote (D-pad, Select, Back).
 - **Family** uses a phone web app. There's nothing to install: open the link or scan the QR code.
 
-> Status: Phase 3 (pairing, photo/voice/text messages, AI-simplified Hindi, one-button replies). This README grows phase by phase.
+> Status: MVP feature-complete (Phases 1–5). Deploy + release APK next.
+
+### What it does
+- **Pairing:** the TV shows a QR code + 6-digit code; family join from their phone browser and the TV says "Riya joined ❤️".
+- **Family → TV:** photo + caption, voice note (≤30 s, their real voice), or text that Gemini rewrites into short, warm Hindi and the TV reads aloud. Chime + banner on arrival.
+- **One-button replies:** 👍 Got it · ❤️ Love you · 📞 Call me, shown live in the family feed.
+- **Medicine reminders:** full-screen takeover with chime + narration at dose time, one "✓ Le liya" button. Not taken within 30 min → the family gets a red alert.
+- **Daily check-in:** "Main theek hoon / I'm OK". No check-in by the deadline (default 11:00) → family alert. "Need help" (with Yes/No confirm) alerts the family instantly.
+- **AI daily digest:** "Summarise Nani's day" turns the day's check-ins, medicines, messages and replies into 3–5 lines, leading with anything that needs attention.
+- **Photo frame:** after 2 minutes idle the TV slideshows family photos ("From Riya"); any key returns home.
 
 ### TV remote controls
 | Screen | Left / Right | Up / Down | Select | Back |
 |---|---|---|---|---|
-| Home | move between *I'm OK*, *Messages*, *Need help* | — | press | exit app |
+| Home | move between *I'm OK*, *Messages*, *Need help* | — | press | press twice to exit |
 | Message viewer | move between 👍 ❤️ 📞 replies | previous / next message | send reply | home |
 | Help confirm | Yes / No (focus starts on No) | — | press | home |
+| Medicine takeover | — | — | ✓ Taken | remind again in 5 min |
+| Photo frame | any key returns home (the key isn't passed on to buttons) | | | home |
+
+### Demo helpers
+- Family app → Settings → **🎬 Demo tools**: trigger a reminder in ~1 min, simulate a missed dose.
+- Debug shell only: `adb shell am start -n com.nanitv.app/.MainActivity --es url "http://<LAN-IP>:5173/tv?idle=10"` makes the photo frame start after 10 s.
 
 ## Architecture
 
@@ -45,6 +60,7 @@
 npx supabase login
 npx supabase secrets set GEMINI_API_KEY=... GEMINI_MODEL=gemini-3.7-flash --project-ref <ref>
 npx supabase functions deploy simplify-message --project-ref <ref> --use-api
+npx supabase functions deploy daily-digest --project-ref <ref> --use-api
 ```
 If the configured model is missing, overloaded or slow, the function falls back to other current Flash models and finally to the original text, so the demo never breaks.
 

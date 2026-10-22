@@ -5,6 +5,7 @@ import HomeScreen from './HomeScreen';
 import MessageViewer from './MessageViewer';
 import HelpConfirm from './HelpConfirm';
 import ReminderTakeover from './ReminderTakeover';
+import PhotoFrame from './PhotoFrame';
 import { useReminderScheduler } from './useReminderScheduler';
 import { sameInstant } from '../lib/reminders';
 import type { MedItem } from './HomeScreen';
@@ -32,6 +33,9 @@ export default function TvApp() {
   const bannerTimer = useRef<number>();
   const screenRef = useRef(screen);
   screenRef.current = screen;
+  const [frame, setFrame] = useState(false);
+  const frameRef = useRef(frame);
+  frameRef.current = frame;
 
   const showToast = useCallback((text: string) => {
     setToast(text);
@@ -49,6 +53,7 @@ export default function TvApp() {
         m.type === 'photo' ? (hi ? 'photo' : 'a photo') : m.type === 'voice' ? (hi ? 'aawaz sandesh' : 'a voice note') : hi ? 'sandesh' : 'a message';
       const text = hi ? `${name} ne ${what} bheja` : `${name} sent ${what}`;
       console.log('[NaniTV] new message', m.type, 'from', name);
+      setFrame(false);
       chimeMessage();
       if (screenRef.current === 'home') {
         setBanner(text);
@@ -88,6 +93,43 @@ export default function TvApp() {
       .subscribe();
     return () => void db.removeChannel(channel);
   }, [household?.id]);
+
+  // Idle photo frame: after IDLE_MS on home with no key presses. `?idle=10` (seconds) for demos.
+  const lastInput = useRef(Date.now());
+  useEffect(() => {
+    const idleMs = (Number(new URLSearchParams(window.location.search).get('idle')) || 120) * 1000;
+    // Capture phase on window runs before the focus groups' listeners, so the key
+    // that wakes the frame doesn't also press a button.
+    const onKey = (e: KeyboardEvent) => {
+      lastInput.current = Date.now();
+      if (frameRef.current) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        setFrame(false);
+      }
+    };
+    window.addEventListener('keydown', onKey, true);
+    const t = window.setInterval(() => {
+      if (!frameRef.current && screenRef.current === 'home' && !takeoverRef.current && Date.now() - lastInput.current >= idleMs) {
+        console.log('[NaniTV] idle → photo frame');
+        setFrame(true);
+      }
+    }, 3000);
+    return () => {
+      window.removeEventListener('keydown', onKey, true);
+      window.clearInterval(t);
+    };
+  }, []);
+  const framePhotos = data.messages
+    .filter((m) => m.type === 'photo' && m.media_url)
+    .slice(-20)
+    .reverse()
+    .map((m) => ({
+      id: m.id,
+      url: m.media_url!,
+      from: memberName(data.members, m.sender_id),
+      caption: m.text,
+    }));
 
   const onTaken = useCallback(async () => {
     const t = takeoverRef.current;
@@ -130,22 +172,32 @@ export default function TvApp() {
     );
   }, [load]);
 
-  // Back: sub-screens return home; home exits the app.
+  // Back: sub-screens return home; home exits the app (on a second press within 3s).
+  const lastBackOnHome = useRef(0);
   useEffect(
     () =>
       onBack(() => {
         const s = screenRef.current;
         console.log('nani-back on', s, takeoverRef.current ? '(reminder → snooze)' : '');
+        lastInput.current = Date.now();
+        if (frameRef.current) return setFrame(false);
         if (takeoverRef.current) return sched.snooze(takeoverRef.current.event);
         if (s === 'viewer' || s === 'help') return setScreen('home');
         if (s === 'pairing' && household) {
           listMembers(household.id).then((m) => (m.length ? setScreen('home') : exitApp()));
           return;
         }
+        // Home: an accidental Back shouldn't drop Nani onto the Fire TV launcher.
+        if (s === 'home' && Date.now() - lastBackOnHome.current > 3000) {
+          lastBackOnHome.current = Date.now();
+          const hi = household?.language !== 'en';
+          showToast(hi ? 'Band karne ke liye phir se Back dabayein' : 'Press Back again to close NaniTV');
+          return;
+        }
         exitApp();
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [household, sched.snooze],
+    [household, sched.snooze, showToast],
   );
 
   const openMessages = useCallback(() => {
@@ -203,7 +255,8 @@ export default function TvApp() {
       {screen === 'error' && <ErrorScreen message={error} onRetry={load} />}
       {screen === 'pairing' && household && <PairingScreen household={household} onDone={() => setScreen('home')} />}
       {takeover && household && <ReminderTakeover household={household} active={takeover} onTaken={onTaken} />}
-      {!takeover && screen === 'home' && household && (
+      {!takeover && frame && screen === 'home' && household && <PhotoFrame household={household} photos={framePhotos} />}
+      {!takeover && !frame && screen === 'home' && household && (
         <HomeScreen
           household={household}
           unread={unread}

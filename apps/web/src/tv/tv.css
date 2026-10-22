@@ -59,7 +59,7 @@ html, body, #root { margin: 0; height: 100%; }
   outline: none;
   cursor: pointer;
 }
-.tv-btn small { font-size: 36px; font-weight: 500; opacity: 0.85; }
+.tv-btn small { font-size: 40px; font-weight: 500; opacity: 0.85; }
 .tv-btn[data-focused='true'] {
   border-color: var(--tv-saffron);
   background: rgba(255, 159, 28, 0.28);
@@ -139,7 +139,7 @@ html, body, #root { margin: 0; height: 100%; }
 .viewer-head, .viewer-text, .viewer-voice, .viewer-caption, .viewer-bottom { position: relative; }
 .viewer-head { display: flex; justify-content: space-between; align-items: center; }
 .viewer-from { font-size: 60px; font-weight: 800; background: rgba(0, 0, 0, 0.35); padding: 12px 36px; border-radius: 999px; }
-.viewer-when { font-size: 40px; color: var(--tv-cream-dim); background: rgba(0, 0, 0, 0.35); padding: 10px 28px; border-radius: 999px; }
+.viewer-when { font-size: 48px; color: var(--tv-cream-dim); background: rgba(0, 0, 0, 0.35); padding: 10px 28px; border-radius: 999px; }
 .viewer-text { flex: 1; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 96px; font-weight: 700; line-height: 1.3; padding: 0 40px; }
 .viewer-caption { margin-top: auto; margin-bottom: 32px; align-self: center; max-width: 1600px; text-align: center; font-size: 64px; font-weight: 700; line-height: 1.25; background: rgba(0, 0, 0, 0.6); padding: 24px 48px; border-radius: 32px; }
 .viewer-voice { flex: 1; display: flex; align-items: center; justify-content: center; gap: 72px; }
@@ -154,13 +154,13 @@ html, body, #root { margin: 0; height: 100%; }
 .viewer-bottom { margin-top: auto; display: flex; flex-direction: column; align-items: center; gap: 20px; }
 .viewer-reply { min-width: 420px; }
 .viewer-reply.chosen { background: rgba(76, 175, 106, 0.45); }
-.viewer-hint { display: flex; gap: 64px; font-size: 40px; color: var(--tv-cream-dim); background: rgba(0, 0, 0, 0.35); padding: 8px 32px; border-radius: 999px; }
+.viewer-hint { display: flex; gap: 64px; font-size: 48px; color: var(--tv-cream-dim); background: rgba(0, 0, 0, 0.35); padding: 8px 32px; border-radius: 999px; }
 .viewer-caption + .viewer-bottom { margin-top: 0; }
 
 /* Home medicine strip */
 .home-meds { display: flex; gap: 20px; align-items: center; justify-content: center; flex-wrap: nowrap; overflow: hidden; }
-.home-meds-label { font-size: 44px; font-weight: 700; color: var(--tv-cream-dim); white-space: nowrap; }
-.home-med { font-size: 40px; font-weight: 600; padding: 10px 28px; border-radius: 999px; background: rgba(255, 244, 220, 0.12); white-space: nowrap; }
+.home-meds-label { font-size: 48px; font-weight: 700; color: var(--tv-cream-dim); white-space: nowrap; }
+.home-med { font-size: 46px; font-weight: 600; padding: 10px 28px; border-radius: 999px; background: rgba(255, 244, 220, 0.12); white-space: nowrap; }
 .home-med.taken { background: rgba(76, 175, 106, 0.4); }
 .home-med.missed { background: rgba(214, 69, 69, 0.55); }
 .home-med.pending { background: rgba(255, 159, 28, 0.45); }
@@ -170,4 +170,18 @@ html, body, #root { margin: 0; height: 100%; }
 .takeover-pill { font-size: 200px; line-height: 1; animation: breathe 1.6s ease-in-out infinite; border-radius: 50%; }
 .takeover-title { font-size: 110px; max-width: 1700px; }
 .takeover-btn { min-width: 640px; min-height: 200px; font-size: 80px; }
-.takeover-hint { font-size: 40px; color: var(--tv-cream-dim); }
+.takeover-hint { font-size: 48px; color: var(--tv-cream-dim); }
+
+/* Photo frame (idle) */
+.frame { position: absolute; inset: 0; background: #000; overflow: hidden; }
+.frame-slide { position: absolute; inset: 0; opacity: 0; transition: opacity 1.5s ease; }
+.frame-slide.on { opacity: 1; }
+.frame-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.frame-slide.on .frame-img { animation: kenburns 9s ease-out both; }
+@keyframes kenburns { from { transform: scale(1); } to { transform: scale(1.06); } }
+.frame-caption { position: absolute; left: 96px; bottom: 64px; max-width: 1400px; display: flex; flex-direction: column; gap: 8px; background: rgba(0, 0, 0, 0.55); padding: 20px 40px; border-radius: 28px; }
+.frame-from { font-size: 56px; font-weight: 800; }
+.frame-text { font-size: 48px; }
+.frame-clock { position: absolute; right: 96px; top: 54px; font-size: 64px; font-weight: 800; background: rgba(0, 0, 0, 0.45); padding: 8px 32px; border-radius: 999px; }
+.frame-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 32px; background: radial-gradient(ellipse at center, var(--tv-bg-2), #0a0a14 75%); }
+.frame-big-clock { font-size: 220px; font-weight: 800; }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { memberName } from '../lib/messages';
+import { supabase } from '../lib/supabase';
 import { formatClock, startOfTodayIn, todayIn, zonedToDate } from '../lib/time';
 import type { Message, Reaction } from '../lib/types';
 import type { HouseholdData } from './useHousehold';
@@ -51,12 +52,57 @@ function Alerts({ data, elder, tz }: { data: HouseholdData; elder: string; tz: s
   );
 }
 
+function Digest({ householdId, elder, tz }: { householdId: string; elder: string; tz: string }) {
+  const [summary, setSummary] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  // Show today's last digest straight away, if one was made.
+  useEffect(() => {
+    supabase!
+      .from('digests')
+      .select('summary')
+      .eq('household_id', householdId)
+      .eq('for_date', todayIn(tz))
+      .maybeSingle()
+      .then(({ data }) => data && setSummary(data.summary));
+  }, [householdId, tz]);
+
+  const run = async () => {
+    setBusy(true);
+    setError('');
+    const { data, error: err } = await supabase!.functions.invoke('daily-digest', {
+      body: { household_id: householdId, date: todayIn(tz) },
+    });
+    setBusy(false);
+    if (err || !data?.summary) return setError('Could not make the summary right now. Try again in a minute.');
+    setSummary(data.summary);
+  };
+
+  return (
+    <div className="fam-digest">
+      {summary && (
+        <div className="fam-digest-text">
+          {summary.split('\n').map((l, i) => (
+            <p key={i}>{l}</p>
+          ))}
+        </div>
+      )}
+      <button className="fam-btn secondary" onClick={run} disabled={busy}>
+        {busy ? `✨ Reading ${elder}'s day…` : summary ? '✨ Refresh summary' : `✨ Summarise ${elder}'s day with AI`}
+      </button>
+      {error && <p className="fam-error fam-small">{error}</p>}
+    </div>
+  );
+}
+
 function TodayCard({ data, elder, tz }: { data: HouseholdData; elder: string; tz: string }) {
   const ok = data.checkins.find((c) => c.kind === 'ok');
   const title = (id: string) => data.reminders.find((r) => r.id === id)?.title ?? 'Medicine';
   return (
     <div className="fam-card fam-today">
       <h2>Today with {elder}</h2>
+      {data.household && <Digest householdId={data.household.id} elder={elder} tz={tz} />}
       <div className={`fam-status ${ok ? 'good' : ''}`}>
         {ok ? `✅ ${elder} said "I'm OK" at ${formatClock(ok.created_at, tz)}` : `⌛ No check-in yet`}
       </div>

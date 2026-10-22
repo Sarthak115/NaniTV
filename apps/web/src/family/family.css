@@ -145,3 +145,8 @@ body {
 .fam-url { display: block; word-break: break-all; background: #f6efe6; padding: 10px; border-radius: 10px; font-size: 13px; }
 .fam-demo summary { font-weight: 700; cursor: pointer; }
 .fam-btn.secondary { background: #fde7d3; color: var(--fam-accent); }
+
+/* Digest */
+.fam-digest { display: flex; flex-direction: column; gap: 10px; }
+.fam-digest-text { background: linear-gradient(135deg, #fff1e0, #fde7d3); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+.fam-digest-text p { margin: 0; line-height: 1.45; }

@@ -48,8 +48,11 @@ class MainActivity : Activity() {
         setContentView(webView)
         hideSystemUi()
 
-        Log.i(TAG, "Loading ${BuildConfig.WEB_URL}")
-        webView.loadUrl(BuildConfig.WEB_URL)
+        // Debug only: `adb shell am start -n com.nanitv.app/.MainActivity --es url "http://…/tv?idle=10"`
+        val override = if (BuildConfig.DEBUG) intent.getStringExtra("url") else null
+        val url = override ?: BuildConfig.WEB_URL
+        Log.i(TAG, "Loading $url")
+        webView.loadUrl(url)
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {

@@ -176,7 +176,7 @@ export default function MessageViewer({ household, members, messages, startId, o
               {...bind(r.id)}
             >
               {r.icon} {hi ? r.hi : r.en}
-              <small>{m.reaction === r.id ? (hi ? '✓ Bheja' : '✓ Sent') : r.en}</small>
+              {(hi || m.reaction === r.id) && <small>{m.reaction === r.id ? (hi ? '✓ Bheja' : '✓ Sent') : r.en}</small>}
             </button>
           ))}
         </div>

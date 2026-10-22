@@ -21,10 +21,10 @@ export default function HelpConfirm({
       <div className="tv-sub">{hi ? 'Call family?' : 'They will be alerted right away'}</div>
       <div className="tv-row">
         <button className="tv-btn danger" {...bind('yes')}>
-          {hi ? 'Haan, bulao' : 'Yes, call them'} <small>Yes</small>
+          {hi ? 'Haan, bulao' : 'Yes, call them'} {hi && <small>Yes</small>}
         </button>
         <button className="tv-btn" {...bind('no')}>
-          {hi ? 'Nahi' : 'No'} <small>No</small>
+          {hi ? 'Nahi' : 'No'} {hi && <small>No</small>}
         </button>
       </div>
     </div>

@@ -88,7 +88,7 @@ export default function HomeScreen(p: Props) {
       {p.meds.length > 0 && (
         <div className="home-meds">
           <span className="home-meds-label">💊 {hi ? 'Aaj ki dawai' : "Today's medicine"}</span>
-          {p.meds.slice(0, 5).map((m) => (
+          {p.meds.slice(-4).map((m) => (
             <span key={m.key} className={`home-med ${m.status}`}>
               {m.status === 'taken' ? '✓' : m.status === 'missed' ? '✗' : '○'} {m.title}{' '}
               {m.at.toLocaleTimeString('en-IN', { timeZone: p.household.timezone, hour: 'numeric', minute: '2-digit' })}
@@ -101,18 +101,18 @@ export default function HomeScreen(p: Props) {
         <button className={`tv-btn home-btn ${okDone ? 'success' : ''}`} {...bind('ok')}>
           {okDone ? '✓ ' : '🙂 '}
           {hi ? 'Main theek hoon' : "I'm OK"}
-          <small>{okDone ? (hi ? 'Aaj bata diya' : 'Done for today') : "I'm OK"}</small>
+          {(okDone || hi) && <small>{okDone ? (hi ? 'Aaj bata diya' : 'Done for today') : "I'm OK"}</small>}
         </button>
         <button className={`tv-btn home-btn ${p.unread ? 'has-new' : ''}`} {...bind('msgs')}>
           💌 {hi ? 'Sandesh' : 'Messages'}
           <small>
-            {p.unread ? (hi ? `${p.unread} naye · new` : `${p.unread} new`) : p.total ? (hi ? 'Sab dekhe · Messages' : 'All seen') : 'Messages'}
+            {p.unread ? (hi ? `${p.unread} naye · new` : `${p.unread} new`) : p.total ? (hi ? 'Sab dekhe · Messages' : 'All seen') : hi ? 'Messages' : 'None yet'}
           </small>
           {p.unread > 0 && <span className="home-badge">{p.unread}</span>}
         </button>
         <button className="tv-btn home-btn danger" {...bind('help')}>
           🆘 {hi ? 'Madad chahiye' : 'Need help'}
-          <small>Need help</small>
+          {hi && <small>Need help</small>}
         </button>
       </div>
     </div>
