@@ -1,0 +1,83 @@
+/* TV design system: 1920x1080 canvas, 5% safe area, min 48px text. */
+:root {
+  --tv-bg: #3b0f1f;
+  --tv-bg-2: #1d2a52;
+  --tv-cream: #fff4dc;
+  --tv-cream-dim: #e8d6b4;
+  --tv-saffron: #ff9f1c;
+  --tv-green: #4caf6a;
+  --tv-red: #d64545;
+}
+
+html, body, #root { margin: 0; height: 100%; }
+
+.tv-root {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: radial-gradient(ellipse at top left, var(--tv-bg-2), var(--tv-bg) 70%);
+  color: var(--tv-cream);
+  font-family: 'Noto Sans', 'Noto Sans Devanagari', system-ui, sans-serif;
+}
+
+/* Fixed 1920x1080 stage, scaled to the actual viewport (WebView is often 960x540 CSS px). */
+.tv-stage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1920px;
+  height: 1080px;
+  transform-origin: 0 0;
+  padding: 54px 96px; /* 5% overscan safe area */
+  box-sizing: border-box;
+  font-size: 48px;
+  display: flex;
+  flex-direction: column;
+}
+
+.tv-h1 { font-size: 96px; margin: 0; font-weight: 800; line-height: 1.1; }
+.tv-h2 { font-size: 72px; margin: 0; font-weight: 700; line-height: 1.15; }
+.tv-sub { font-size: 48px; color: var(--tv-cream-dim); }
+
+.tv-btn {
+  min-width: 360px;
+  min-height: 140px;
+  padding: 20px 48px;
+  border-radius: 32px;
+  border: 6px solid transparent;
+  background: rgba(255, 244, 220, 0.12);
+  color: var(--tv-cream);
+  font: inherit;
+  font-size: 56px;
+  font-weight: 700;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+  outline: none;
+  cursor: pointer;
+}
+.tv-btn small { font-size: 36px; font-weight: 500; opacity: 0.85; }
+.tv-btn[data-focused='true'] {
+  border-color: var(--tv-saffron);
+  background: rgba(255, 159, 28, 0.28);
+  transform: scale(1.08);
+  box-shadow: 0 0 48px 8px rgba(255, 159, 28, 0.55);
+}
+.tv-btn.danger { background: rgba(214, 69, 69, 0.35); }
+.tv-btn.success { background: rgba(76, 175, 106, 0.35); }
+
+.tv-row { display: flex; gap: 64px; align-items: center; justify-content: center; }
+.tv-center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 48px; text-align: center; }
+
+.tv-debug {
+  position: absolute;
+  left: 96px;
+  bottom: 40px;
+  font-size: 28px;
+  color: var(--tv-cream-dim);
+  opacity: 0.7;
+  font-family: monospace;
+}

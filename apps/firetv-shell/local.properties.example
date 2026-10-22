@@ -1,0 +1,6 @@
+# Copy to local.properties (git-ignored). Android Studio fills sdk.dir automatically.
+sdk.dir=C\:\\Users\\YOU\\AppData\\Local\\Android\\Sdk
+# Debug builds load this (your laptop's LAN IP + Vite port)
+nanitv.devUrl=http://192.168.1.10:5173/tv
+# Release builds load this
+nanitv.releaseUrl=https://nanitv.vercel.app/tv

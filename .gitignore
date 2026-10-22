@@ -1,0 +1,18 @@
+node_modules/
+dist/
+.env
+.env.local
+*.log
+
+# Android
+apps/firetv-shell/.gradle/
+apps/firetv-shell/build/
+apps/firetv-shell/app/build/
+apps/firetv-shell/local.properties
+apps/firetv-shell/.idea/
+*.iml
+.kotlin/
+
+# Supabase
+supabase/.temp/
+supabase/.branches/

@@ -1,0 +1,1 @@
+{"root":["./src/main.tsx","./src/vite-env.d.ts","./src/family/familyapp.tsx","./src/lib/native.ts","./src/lib/supabase.ts","./src/tv/tvapp.tsx","./src/tv/tvstage.tsx","./src/tv/usefocusgroup.ts","./vite.config.ts"],"version":"5.9.3"}
