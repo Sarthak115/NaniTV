@@ -49,3 +49,21 @@ Dev machine: Windows 11, Android Studio, Java 17, Gradle 8.11.1, AGP 8.7.3.
 - Severity: Minor
 - Workaround used: Intercept `KEYCODE_BACK` in `dispatchKeyEvent` and `evaluateJavascript("window.dispatchEvent(new Event('nani-back'))")`. The page decides whether to navigate back or call `NaniNative.exitApp()`. DPAD_CENTER is also explicitly remapped to ENTER as a safety net.
 - Actionable suggestion: A documented "web app on Fire TV" sample that shows this Back-key bridge pattern would save every WebView developer the same hour.
+
+### FL-6: Supabase SQL editor stuck on "Running…" during an incident (migration had actually succeeded)
+- Task attempted: Apply `0001_init.sql` in a brand-new Supabase project via the dashboard SQL editor.
+- Steps taken: Created the project (Asia-Pacific; the form showed "Incident in progress" for the region), pasted the migration, clicked Run.
+- Expected: A success or error result within seconds.
+- Actual: The editor spun on "Running…" indefinitely, and the API Keys page also hung on "Retrieving API keys" until a hard reload. A banner said "We are investigating a technical issue".
+- Severity: Major (time lost on a hackathon clock; unclear whether re-running would double-apply)
+- Workaround used: Reloaded the keys page, then verified the migration from outside the dashboard with REST calls using the anon key. All 7 tables responded, and a test upload to the `media` bucket plus a public read succeeded. So the SQL had run; only the dashboard's result view was stuck.
+- Actionable suggestion: Show query status from the server side (or a "check last run" link), and make the migration path via `supabase db push` more prominent for new projects.
+
+### FL-7: Vite dependency re-optimisation breaks the page inside the Fire TV WebView ("Invalid hook call")
+- Task attempted: Load the TV page after adding `qrcode.react`.
+- Steps taken: Restarted `vite --host`, launched the shell.
+- Expected: The page loads.
+- Actual: Vite discovered a new dependency at runtime, re-bundled, and the WebView ended up with two React copies (two different `?v=` hashes), so `Cannot read properties of null (reading 'useState')` was thrown. A desktop browser auto-reloads past this. On the TV you only see a blank screen unless you are tailing `adb logcat`.
+- Severity: Minor
+- Workaround used: List all runtime deps in `optimizeDeps.include` and start with `vite --force` once.
+- Actionable suggestion: (Vite) a louder full-reload on dep re-optimisation. (Fire TV docs) recommend mirroring `console` to logcat in WebView samples, as our shell does, since the TV gives no visual error.

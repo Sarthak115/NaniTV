@@ -1,74 +1,99 @@
-﻿import { useCallback, useEffect, useState } from 'react';
+﻿import { useCallback, useEffect, useRef, useState } from 'react';
 import TvStage from './TvStage';
+import PairingScreen from './PairingScreen';
 import { useFocusGroup } from './useFocusGroup';
-import { exitApp, isOnTv, onBack, speak, ttsLanguages } from '../lib/native';
+import { exitApp, onBack, ttsLanguages } from '../lib/native';
 import { supabaseConfigured } from '../lib/supabase';
+import { getOrCreateTvHousehold, listMembers } from '../lib/household';
+import type { Household } from '../lib/types';
 
-// Phase 1 placeholder: proves D-pad focus, Select→Enter, Back→`nani-back`, and the TTS bridge.
+type Screen = 'loading' | 'error' | 'pairing' | 'home';
+
 export default function TvApp() {
-  const [lastKey, setLastKey] = useState('—');
-  const [langs, setLangs] = useState<string[]>([]);
+  const [screen, setScreen] = useState<Screen>('loading');
+  const [household, setHousehold] = useState<Household | null>(null);
+  const [error, setError] = useState('');
+  const screenRef = useRef(screen);
+  screenRef.current = screen;
 
-  useEffect(() => {
-    const l = ttsLanguages();
-    console.log('[NaniTV] ttsLanguages', JSON.stringify(l));
-    setLangs(l);
-    // TTS engine may initialise after page load on the device; ask again shortly.
-    const t = setTimeout(() => {
-      const l2 = ttsLanguages();
-      console.log('[NaniTV] ttsLanguages (retry)', JSON.stringify(l2));
-      setLangs(l2);
-    }, 2500);
-    return () => clearTimeout(t);
+  const load = useCallback(async () => {
+    setScreen('loading');
+    try {
+      if (!supabaseConfigured) throw new Error('Supabase is not configured. Fill in apps/web/.env');
+      const h = await getOrCreateTvHousehold();
+      setHousehold(h);
+      const members = await listMembers(h.id);
+      console.log('[NaniTV] household', h.id, 'code', h.pair_code, 'members', members.length);
+      setScreen(members.length ? 'home' : 'pairing');
+    } catch (e) {
+      console.error('[NaniTV] load failed', e);
+      setError(e instanceof Error ? e.message : String(e));
+      setScreen('error');
+    }
   }, []);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      console.log('[NaniTV] keydown', e.key, e.keyCode);
-      setLastKey(`${e.key} (${e.keyCode})`);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, []);
+    void load();
+    console.log('[NaniTV] ttsLanguages', JSON.stringify(ttsLanguages()));
+  }, [load]);
 
+  // Back: sub-screens return home; home / pairing-first-run exits the app.
   useEffect(
     () =>
       onBack(() => {
-        console.log('nani-back');
-        setLastKey('Back (nani-back)');
+        const s = screenRef.current;
+        console.log('nani-back on', s);
+        if (s === 'pairing' && household) {
+          listMembers(household.id).then((m) => (m.length ? setScreen('home') : exitApp()));
+          return;
+        }
+        exitApp();
       }),
-    [],
+    [household],
   );
-
-  const onSelect = useCallback((id: string) => {
-    if (id === 'hi') speak('नमस्ते नानी, आप कैसी हैं?', 'hi');
-    if (id === 'en') speak('Hello Nani, how are you today?', 'en');
-    if (id === 'exit') exitApp();
-  }, []);
-
-  const { bind } = useFocusGroup(['hi', 'en', 'exit'], { onSelect });
 
   return (
     <TvStage>
-      <div className="tv-center">
-        <h1 className="tv-h1">Namaste Nani 🙏</h1>
-        <div className="tv-sub">NaniTV — Phase 1 shell check ✓ live reload</div>
-        <div className="tv-row">
-          <button className="tv-btn" {...bind('hi')}>
-            बोलो हिंदी <small>Speak Hindi</small>
-          </button>
-          <button className="tv-btn" {...bind('en')}>
-            Bolo English <small>Speak English</small>
-          </button>
-          <button className="tv-btn danger" {...bind('exit')}>
-            Band karo <small>Exit</small>
-          </button>
+      {screen === 'loading' && (
+        <div className="tv-center">
+          <div className="tv-h2">NaniTV</div>
+          <div className="tv-sub">Ek pal… / One moment…</div>
         </div>
-      </div>
-      <div className="tv-debug">
-        key: {lastKey} · native: {isOnTv() ? 'yes' : 'no'} · supabase:{' '}
-        {supabaseConfigured ? 'yes' : 'no'} · tts: {langs.join(', ') || '—'}
-      </div>
+      )}
+      {screen === 'error' && <ErrorScreen message={error} onRetry={load} />}
+      {screen === 'pairing' && household && (
+        <PairingScreen household={household} onDone={() => setScreen('home')} />
+      )}
+      {screen === 'home' && household && (
+        <HomePlaceholder household={household} onAddFamily={() => setScreen('pairing')} />
+      )}
     </TvStage>
+  );
+}
+
+function ErrorScreen({ message, onRetry }: { message: string; onRetry: () => void }) {
+  const { bind } = useFocusGroup(['retry'], { onSelect: onRetry });
+  return (
+    <div className="tv-center">
+      <div className="tv-h2">Kuch gadbad hai / Something went wrong</div>
+      <div className="tv-error">{message}</div>
+      <button className="tv-btn" {...bind('retry')}>
+        Phir se <small>Try again</small>
+      </button>
+    </div>
+  );
+}
+
+// Replaced by the real home screen in Phase 3.
+function HomePlaceholder({ household, onAddFamily }: { household: Household; onAddFamily: () => void }) {
+  const { bind } = useFocusGroup(['add'], { onSelect: onAddFamily });
+  return (
+    <div className="tv-center">
+      <h1 className="tv-h1">Namaste {household.elder_name} 🙏</h1>
+      <div className="tv-sub">Home screen arrives in Phase 3</div>
+      <button className="tv-btn" {...bind('add')}>
+        Parivaar jodein <small>Add family</small>
+      </button>
+    </div>
   );
 }

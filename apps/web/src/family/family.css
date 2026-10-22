@@ -1,18 +1,81 @@
 :root {
   --fam-bg: #fff8ee;
   --fam-text: #2a1a12;
+  --fam-muted: #7a6355;
   --fam-accent: #c2410c;
+  --fam-accent-ink: #ffffff;
   --fam-card: #ffffff;
+  --fam-line: #f0dfcc;
+  --fam-red: #b91c1c;
 }
 body {
   margin: 0;
   background: var(--fam-bg);
   color: var(--fam-text);
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  -webkit-text-size-adjust: 100%;
 }
 .fam-page {
   max-width: 560px;
   margin: 0 auto;
-  padding: 24px 16px;
+  padding: 24px 16px 48px;
 }
-.fam-page h1 { color: var(--fam-accent); margin: 0 0 8px; }
+.fam-page h1 { color: var(--fam-accent); margin: 0 0 16px; font-size: 28px; }
+.fam-card {
+  background: var(--fam-card);
+  border: 1px solid var(--fam-line);
+  border-radius: 20px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 4px 20px rgba(120, 60, 20, 0.06);
+}
+.fam-card h2 { margin: 0; font-size: 22px; }
+.fam-card p { margin: 0; line-height: 1.45; }
+.fam-muted { color: var(--fam-muted); }
+.fam-label { display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 15px; }
+.fam-input {
+  font: inherit;
+  font-size: 18px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1.5px solid var(--fam-line);
+  background: #fffdf9;
+  color: inherit;
+}
+.fam-input:focus { outline: 2px solid var(--fam-accent); border-color: transparent; }
+.fam-code { font-size: 32px; letter-spacing: 6px; text-align: center; font-weight: 700; }
+.fam-btn {
+  font: inherit;
+  font-size: 18px;
+  font-weight: 700;
+  padding: 16px;
+  border-radius: 14px;
+  border: none;
+  background: var(--fam-accent);
+  color: var(--fam-accent-ink);
+  cursor: pointer;
+}
+.fam-btn:disabled { opacity: 0.5; }
+.fam-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.fam-chip {
+  font: inherit;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1.5px solid var(--fam-line);
+  background: #fffdf9;
+  color: inherit;
+  cursor: pointer;
+}
+.fam-chip.on { background: var(--fam-accent); color: var(--fam-accent-ink); border-color: var(--fam-accent); }
+.fam-error { color: var(--fam-red); font-weight: 600; }
+.fam-link {
+  margin-top: 20px;
+  background: none;
+  border: none;
+  color: var(--fam-muted);
+  text-decoration: underline;
+  font: inherit;
+  cursor: pointer;
+}

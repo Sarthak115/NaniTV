@@ -7,4 +7,9 @@ import legacy from '@vitejs/plugin-legacy';
 export default defineConfig({
   plugins: [react(), legacy({ targets: ['chrome >= 61'] })],
   server: { host: true, port: 5173 },
+  // Pre-bundle everything up front: a mid-session re-optimisation on the TV
+  // leaves two React copies loaded ("Invalid hook call").
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react-dom/client', 'react-router-dom', '@supabase/supabase-js', 'qrcode.react'],
+  },
 });
