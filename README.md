@@ -49,6 +49,10 @@
 | `supabase/` | SQL migrations + Edge Functions (Gemini) |
 | `docs/` | Friction log, feedback, demo script, submission |
 
+## Try it (hosted)
+- **Family app:** https://nanitv.vercel.app/family (scan the QR on the TV, or enter its 6-digit code)
+- **TV app:** sideload the release APK (below). It loads https://nanitv.vercel.app/tv, so no laptop is needed.
+
 ## Local development (Windows / PowerShell)
 
 ### 0. Supabase + Gemini (free tiers)
@@ -94,6 +98,31 @@ scrcpy -s <FIRETV_IP>:5555             # optional: mirror the TV
 - Debug builds load `nanitv.devUrl` (cleartext allowed). Release builds load `nanitv.releaseUrl` over HTTPS.
 - Debug builds enable WebView remote debugging, so you can inspect the TV page from desktop Chrome at `chrome://inspect`.
 - If `JAVA_HOME` points somewhere invalid, unset it. Gradle needs JDK 17+.
+- Debug only: `adb shell am start -n com.nanitv.app/.MainActivity --es url "<any url>"` overrides the URL once.
+
+### 3. Deploy (Vercel, free Hobby plan)
+```powershell
+cd apps/web
+npx vercel login
+npx vercel link --yes --project nanitv
+# Use --value (not a pipe): PowerShell pipes add an invisible BOM (friction log FL-11).
+npx vercel env add VITE_SUPABASE_URL --environment production --type config --value "https://<ref>.supabase.co" --yes
+npx vercel env add VITE_SUPABASE_ANON_KEY --environment production --type config --value "<anon key>" --yes
+npx vercel deploy --prod
+```
+`vercel.json` rewrites all routes to `index.html`; `.vercelignore` keeps local `.env*` files out of the upload.
+The Supabase **anon** key is public by design (it ships in every Supabase web app); never put the `service_role` key here.
+
+### 4. Release APK (loads the hosted app)
+Set `nanitv.releaseUrl=https://<your-app>.vercel.app/tv` in `local.properties`, then:
+```powershell
+cd apps/firetv-shell
+./gradlew assembleRelease            # debug-signed so it can be sideloaded
+adb install -r app/build/outputs/apk/release/app-release.apk
+adb shell am start -n com.nanitv.app/.MainActivity
+```
+The release build disables cleartext traffic and WebView debugging but still mirrors the page console to `adb logcat -s NaniTV`.
+The app shows up in **Settings → Applications → Manage Installed Applications** and on the Fire TV home row ("Your Apps & Channels").
 
 ### Native bridge (`window.NaniNative`)
 | Method | Notes |
@@ -107,7 +136,11 @@ The Back key is delivered to the page as `window` event `nani-back`. The Select 
 
 ## Known limitations
 - Third-party apps can't draw over other apps (Netflix/YouTube) on Fire TV. NaniTV is the TV's companion "channel" that stays open, and reminders fire while it's open.
-- The tested Fire TV Stick (2nd gen, Fire OS 5) has **no Hindi TTS voice**. Hindi content relies on family voice notes and on-screen text.
+- The tested Fire TV Stick (2nd gen, Fire OS 5) has **no Hindi TTS voice**. Hindi text is shown in Devanagari and read aloud as Gemini-transliterated Hinglish with the English voice; voice notes carry the family's real voice.
+- **Demo-grade security:** RLS allows the anon role to read/write; access is scoped in the app by the household id obtained through the pairing code. A production version needs per-household auth (e.g. Supabase anonymous auth + RLS on `household_id`).
+- **Supabase free tier pauses** projects after ~1 week of inactivity. If the TV shows "Something went wrong", restore the project from the Supabase dashboard.
+- Gemini free-tier models can be overloaded (503) or slow; the functions fall back to other Flash models, then to the original text / a template digest.
+- Reminders and the photo frame run while NaniTV is open; the TV must be on and on the NaniTV app.
 
 ## License
 MIT

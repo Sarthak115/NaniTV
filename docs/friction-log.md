@@ -94,3 +94,12 @@ Dev machine: Windows 11, Android Studio, Java 17, Gradle 8.11.1, AGP 8.7.3.
 - Severity: Minor
 - Workaround used: Remove the row locally after a successful delete, and steer families to the "On/Off" toggle (an UPDATE) rather than deleting.
 - Actionable suggestion: Warn at subscribe time when a filtered channel includes DELETE.
+
+### FL-11: Vercel env vars piped from PowerShell got an invisible BOM, so the TV failed with "non ISO-8859-1 code point"
+- Task attempted: Deploy the web app to Vercel with `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`, then load it in the release Fire TV shell.
+- Steps taken: `$value | vercel env add NAME production` from Windows PowerShell 5.1, then `vercel deploy --prod`.
+- Expected: The values are stored exactly as typed.
+- Actual: The deployed TV page showed "Something went wrong". In `adb logcat` the WebView reported `Failed to execute 'set' on 'Headers': String contains non ISO-8859-1 code point`. PowerShell had prefixed the piped value with a UTF-8 BOM (`\uFEFF`), which Vercel stored and Vite baked into the bundle. The CLI said "Removed trailing newline" but kept the BOM. Separately, CLI 65 now refuses `VITE_*` values that "look like a credential" until you choose `--type config` or `--type secret`. That's a good guard, but the Supabase *anon* key is meant to be public.
+- Severity: Major (production broken, error only visible via logcat)
+- Workaround used: Re-added the vars with `--value "<v>" --type config --yes` (no stdin), then redeployed with `--force`. Verified the bundle no longer contains `\uFEFF`.
+- Actionable suggestion: (Vercel) Strip a leading BOM from stdin, as you already do for trailing newlines. (Fire TV) The release WebView gives no on-screen hint, so keep console→logcat mirroring even in release shells.

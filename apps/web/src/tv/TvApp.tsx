@@ -154,8 +154,11 @@ export default function TvApp() {
       console.log('[NaniTV] household', h.id, 'code', h.pair_code, 'members', members.length);
       setScreen(members.length ? 'home' : 'pairing');
     } catch (e) {
-      console.error('[NaniTV] load failed', e);
-      setError(e instanceof Error ? e.message : String(e));
+      // Supabase errors are plain objects ({ message, code, details }), not Error instances.
+      const msg =
+        e instanceof Error ? e.message : typeof e === 'object' && e ? JSON.stringify(e) : String(e);
+      console.error('[NaniTV] load failed', msg);
+      setError(msg);
       setScreen('error');
     }
   }, []);
