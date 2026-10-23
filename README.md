@@ -52,7 +52,15 @@
 
 ## Try it (hosted)
 - **Family app:** https://nanitv.vercel.app/family (scan the QR on the TV, or enter its 6-digit code)
-- **TV app:** sideload the release APK (below). It loads https://nanitv.vercel.app/tv, so no laptop is needed.
+- **TV app:** install the ready-made APK on a Fire TV (ADB debugging on; see step 1 below). It loads https://nanitv.vercel.app/tv, so no laptop or build is needed:
+```bash
+curl -L -o nanitv-firetv.apk https://github.com/sarthak115/nanitv/raw/main/release/nanitv-firetv.apk
+adb connect <FIRE_TV_IP>:5555          # accept the prompt on the TV
+adb install -r nanitv-firetv.apk
+adb shell am start -n com.nanitv.app/.MainActivity
+```
+  [`release/nanitv-firetv.apk`](release/nanitv-firetv.apk) is a debug-signed release build (sideload only), tested on a Fire TV Stick 2nd gen (Fire OS 5). It also appears in *Your Apps & Channels*.
+- **No Fire TV?** Open https://nanitv.vercel.app/tv in a desktop browser. Arrow keys + Enter act as the remote, and Esc acts as Back.
 
 ## Local development (Windows / PowerShell)
 
