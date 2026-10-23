@@ -12,7 +12,7 @@ import type { MedItem } from './HomeScreen';
 import { useFocusGroup } from './useFocusGroup';
 import { useTvData } from './useTvData';
 import { say } from './speech';
-import { exitApp, onBack, ttsLanguages } from '../lib/native';
+import { exitApp, onBack, syncNativeReminders, ttsLanguages } from '../lib/native';
 import { supabase, supabaseConfigured } from '../lib/supabase';
 import { getOrCreateTvHousehold, listMembers } from '../lib/household';
 import { memberName } from '../lib/messages';
@@ -78,6 +78,20 @@ export default function TvApp() {
   const takeover = screen !== 'pairing' && ready ? sched.active : null;
   const takeoverRef = useRef(takeover);
   takeoverRef.current = takeover;
+
+  // Let the Fire TV shell schedule the same reminders natively, so they still pop up
+  // (as an overlay) when Nani is watching Netflix or YouTube.
+  useEffect(() => {
+    if (!household) return;
+    syncNativeReminders({
+      supabaseUrl: import.meta.env.VITE_SUPABASE_URL ?? '',
+      anonKey: import.meta.env.VITE_SUPABASE_ANON_KEY ?? '',
+      householdId: household.id,
+      timezone: household.timezone,
+      language: household.language,
+      reminders: sched.reminders.map(({ id, title, times, active, created_at }) => ({ id, title, times, active, created_at })),
+    });
+  }, [household, sched.reminders]);
 
   // Family can change the elder's name / language / deadline from the phone.
   useEffect(() => {

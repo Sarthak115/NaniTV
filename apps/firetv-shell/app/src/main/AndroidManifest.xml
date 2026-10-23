@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Medicine reminders over other apps (granted at install on Fire OS 5 / API 22). -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
     <uses-feature android:name="android.software.leanback" android:required="false" />
@@ -26,5 +28,9 @@
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Medicine reminders while NaniTV is in the background: alarms → overlay over other apps. -->
+        <service android:name=".OverlayService" android:exported="false" />
+        <receiver android:name=".ReminderReceiver" android:exported="false" />
     </application>
 </manifest>

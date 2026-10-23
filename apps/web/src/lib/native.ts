@@ -7,6 +7,8 @@ interface NaniNativeBridge {
   stopSpeaking(): void;
   ttsLanguages(): string;
   exitApp(): void;
+  /** Newer shells only: native alarms + overlay so reminders fire over other apps. */
+  setReminders?(json: string): void;
 }
 
 declare global {
@@ -54,6 +56,24 @@ export function ttsLanguages(): string[] {
     return Array.from(new Set(window.speechSynthesis.getVoices().map((v) => v.lang)));
   }
   return [];
+}
+
+export interface NativeReminderConfig {
+  supabaseUrl: string;
+  anonKey: string;
+  householdId: string;
+  timezone: string;
+  language: Lang;
+  reminders: { id: string; title: string; times: string[]; active: boolean; created_at: string }[];
+}
+
+/** Hand the reminder list to the Fire TV shell so doses alert over Netflix etc. (no-op elsewhere). */
+export function syncNativeReminders(cfg: NativeReminderConfig) {
+  try {
+    window.NaniNative?.setReminders?.(JSON.stringify(cfg));
+  } catch (e) {
+    console.warn('[NaniTV] setReminders failed', e);
+  }
 }
 
 export function exitApp() {

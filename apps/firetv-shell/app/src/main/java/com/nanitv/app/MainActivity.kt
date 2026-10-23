@@ -53,6 +53,7 @@ class MainActivity : Activity() {
         val url = override ?: BuildConfig.WEB_URL
         Log.i(TAG, "Loading $url")
         webView.loadUrl(url)
+        ReminderScheduler.scheduleAll(this) // re-arm saved reminders (alarms don't survive reboots)
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
@@ -94,10 +95,12 @@ class MainActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
+        isForeground = true
         webView.onResume()
     }
 
     override fun onPause() {
+        isForeground = false
         webView.onPause()
         super.onPause()
     }
@@ -110,5 +113,8 @@ class MainActivity : Activity() {
 
     companion object {
         const val TAG = "NaniTV"
+
+        /** True while NaniTV is on screen; then the web app's own takeover handles reminders. */
+        @Volatile var isForeground = false
     }
 }

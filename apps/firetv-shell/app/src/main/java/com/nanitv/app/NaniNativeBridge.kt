@@ -82,6 +82,12 @@ class NaniNativeBridge(private val activity: Activity) {
         return JSONArray(tags.toList()).toString()
     }
 
+    /** Reminder list from the web app, so doses still alert over other apps when NaniTV is in the background. */
+    @JavascriptInterface
+    fun setReminders(json: String) {
+        ReminderScheduler.save(activity.applicationContext, json)
+    }
+
     @JavascriptInterface
     fun exitApp() {
         activity.runOnUiThread { activity.finish() }
