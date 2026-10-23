@@ -3,7 +3,7 @@
 Format: **Request** — Why it matters for NaniTV — **Priority**
 
 1. **A sanctioned way for companion apps to show gentle reminders over other apps** (e.g. a "care reminder" notification type the user opts into, shown as a small toast over Netflix/YouTube, with a single "Done" button).
-   — Elders take medicine while watching TV. Today NaniTV's reminders only appear while NaniTV is open, which is its biggest real-world limitation. — **Critical**
+   — Elders take medicine while watching TV. NaniTV now shows reminders over Netflix/YouTube using the legacy `SYSTEM_ALERT_WINDOW` overlay (verified on Fire OS 5), but that permission needs a runtime grant on newer Fire OS with no TV settings screen for it. A documented, opt-in API would make this reliable on every Fire TV. — **Critical**
 
 2. **First-class Hindi / Indic text-to-speech voices on Fire TV, available to third-party apps through `TextToSpeech`.**
    — On our Fire TV Stick the default engine rejects every locale for apps, and no engine has `hi-IN`. Our Hindi messages have to be transliterated and read by an English voice. Natural Hindi (and Bengali, Tamil, Odia…) voices would make Fire TV a real accessibility channel for India's elders. — **Critical**

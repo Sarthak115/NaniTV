@@ -12,6 +12,7 @@
 - **Family → TV:** photo + caption, voice note (≤30 s, their real voice), or text that Gemini rewrites into short, warm Hindi and the TV reads aloud. Chime + banner on arrival.
 - **One-button replies:** 👍 Got it · ❤️ Love you · 📞 Call me, shown live in the family feed.
 - **Medicine reminders:** full-screen takeover with chime + narration at dose time, one "✓ Le liya" button. Not taken within 30 min → the family gets a red alert.
+- **Reminders over any app:** if Nani is watching Netflix or YouTube at dose time, a reminder card with a chime and a big **✓ Taken** button appears *on top of that app* and takes the remote's focus. OK marks the dose taken for the family; Back hides it until later. This is powered by native `AlarmManager` alarms in the Fire TV shell, so it works even if NaniTV was closed in the background.
 - **Daily check-in:** "Main theek hoon / I'm OK". No check-in by the deadline (default 11:00) → family alert. "Need help" (with Yes/No confirm) alerts the family instantly.
 - **AI daily digest:** "Summarise Nani's day" turns the day's check-ins, medicines, messages and replies into 3–5 lines, leading with anything that needs attention.
 - **Photo frame:** after 2 minutes idle the TV slideshows family photos ("From Riya"); any key returns home.
@@ -135,7 +136,7 @@ The app shows up in **Settings → Applications → Manage Installed Application
 The Back key is delivered to the page as `window` event `nani-back`. The Select key arrives as `Enter`.
 
 ## Known limitations
-- Third-party apps can't draw over other apps (Netflix/YouTube) on Fire TV. NaniTV is the TV's companion "channel" that stays open, and reminders fire while it's open.
+- **Reminders over other apps** use Android's legacy `SYSTEM_ALERT_WINDOW` overlay, which Fire OS 5 (API 22) grants at install. Verified on a Fire TV Stick 2nd gen over Netflix and YouTube. On newer Fire OS versions (Android 6+), the "display over other apps" permission must be granted first (e.g. `adb shell appops set com.nanitv.app SYSTEM_ALERT_WINDOW allow`), and we haven't tested those devices. Without it, reminders still fire whenever NaniTV is open.
 - The tested Fire TV Stick (2nd gen, Fire OS 5) has **no Hindi TTS voice**. Hindi text is shown in Devanagari and read aloud as Gemini-transliterated Hinglish with the English voice; voice notes carry the family's real voice.
 - **Demo-grade security:** RLS allows the anon role to read/write; access is scoped in the app by the household id obtained through the pairing code. A production version needs per-household auth (e.g. Supabase anonymous auth + RLS on `household_id`).
 - **Supabase free tier pauses** projects after ~1 week of inactivity. If the TV shows "Something went wrong", restore the project from the Supabase dashboard.
@@ -186,7 +187,7 @@ npx tsx scripts/assistant-test.ts "Any alerts for Nani?"   # end-to-end: MCP cli
 The Fire TV shell and the D-pad focus hook are extracted into a standalone MIT template, **[firetv-web-shell](https://github.com/sarthak115/firetv-web-shell)**. It covers the leanback banner, Back→JS, Select→Enter, a TTS bridge with the Fire OS 5 Pico fallback, debug LAN URL + release URL, `focus.ts` / `useFocusGroup.ts`, and a 5-minute quickstart verified on a Fire TV Stick.
 
 ## Docs
-- [Friction log](docs/friction-log.md): 14 entries from building on a real Fire TV Stick, plus honest seed checks
+- [Friction log](docs/friction-log.md): 15 entries from building on a real Fire TV Stick, plus honest seed checks
 - [Product feedback](docs/product-feedback.md): Fire TV, Builder Tools MCP, Supabase, Gemini, Vercel, scrcpy
 - [Feature requests](docs/feature-requests.md)
 - [Demo script](docs/demo-script.md) · [Devpost submission](docs/devpost-submission.md)

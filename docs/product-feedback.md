@@ -21,7 +21,7 @@ The TV half of NaniTV: a Kotlin single-Activity fullscreen WebView (`LEANBACK_LA
 - **Back key** never reaches a WebView page (FL-5). Every WebView app has to rediscover the `dispatchKeyEvent` → `evaluateJavascript` pattern.
 - **Errors are invisible on the TV.** A JS crash is a blank screen; you only see it if you mirror `console` to logcat (FL-7, FL-11).
 - **ADB authorisation** shows only on the TV, with no hint in the CLI (FL-1).
-- **No sanctioned way to show a gentle reminder over another app** (Netflix/YouTube). For medicine reminders this is the difference between "works while our app is open" and "works".
+- **No documented way to show a gentle reminder over another app** (Netflix/YouTube). We made it work on Fire OS 5 with the legacy `SYSTEM_ALERT_WINDOW` overlay + `AlarmManager` (FL-15), and it's great: the card takes remote focus, and OK marks the dose taken. But it relies on a permission that behaves differently on newer Fire OS versions, with no Fire TV settings screen to grant it.
 
 **Onboarding (zero → hello world)**
 About 45 minutes from empty folder to our React page on the TV: Developer Options → ADB → a Kotlin WebView shell → LAN dev server. Most of that time was writing the shell and finding the Back-key and TTS quirks. We packaged the result as **firetv-web-shell** so the next person needs about 5 minutes.

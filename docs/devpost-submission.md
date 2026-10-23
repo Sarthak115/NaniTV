@@ -21,6 +21,7 @@ My Nani lives alone. She can't use WhatsApp, and a smartphone is a constant sour
 - **Family messages** arrive with a gentle chime and banner: a **voice note** plays the grandchild's real voice; a **photo** fills the screen with a big caption; a **text** is rewritten by Gemini into two short, warm sentences in Hindi and **read aloud**.
 - **One-button replies** on every message (👍 Got it · ❤️ Love you · 📞 Call me) appear on the family's phones within a couple of seconds.
 - **Medicine reminders** take over the screen with a chime and narration ("BP tablet ka samay ho gaya") and a single **✓ Le liya** button. Not confirmed within 30 minutes → the family gets a red alert.
+- **Reminders over any app:** if Nani is watching Netflix or YouTube at dose time, a reminder card with a big **✓ Taken** button pops up *on top of that app* and takes the remote's focus. One press of OK marks it taken for the family, and she's back to her show. (Native alarms + overlay in the Fire TV shell; verified on a Fire TV Stick running Fire OS 5.)
 - **Daily check-in:** if there's no "I'm OK" by 11:00 the family is alerted; **Need help** (with a Yes/No confirm) alerts them instantly.
 - **Photo frame:** when idle, the TV becomes a slideshow of family photos ("Riya ki taraf se").
 
@@ -49,18 +50,19 @@ My Nani lives alone. She can't use WhatsApp, and a smartphone is a constant sour
 - It runs on a **2016-era Fire TV Stick (Fire OS 5)**, not just an emulator. Every feature was tested on the real device with only the remote.
 - An interface an 80-year-old can use: three buttons, Hindi first, nothing to install or learn.
 - Real **MCP** end to end: server, client, function calling, and a visible "Under the hood" JSON-RPC log.
+- Medicine reminders that **pop up over Netflix and YouTube** and are answered with the remote's OK button, which we were told wasn't possible on Fire TV until we tried it on the device.
 - Turning our TV shell into a reusable **open-source template**.
 
 ## What we learned
 - Designing for elders is mostly about *removing* things: one action per screen, no accidental exits (Back twice to close), focus that never disappears.
-- WebView on Fire TV is far more capable than we expected; the gaps are in platform services (TTS, overlays), not the web runtime.
+- WebView on Fire TV is far more capable than we expected; the gaps are in platform services (Indic TTS, a documented overlay API), not the web runtime. A thin native layer (alarms + an overlay) filled the overlay gap without leaving the web app.
 - With free-tier AI, robustness (fallbacks, timeouts, graceful degradation) matters as much as the prompt.
 
 ## What's next for NaniTV
 - Real **Alexa+** integration when tooling opens up (the MCP server is ready), and "Alexa, tell Nani…" from any Echo.
 - Proper per-household auth (Supabase auth + RLS on `household_id`; OAuth for MCP).
 - More Indic languages (Odia, Bengali, Tamil) and natural Indic voices when available.
-- Weekly digests, and gentle reminders over other apps if Fire OS allows it.
+- Weekly digests, and taking "reminders over any app" to newer Fire OS versions (they need the overlay permission granted at runtime).
 
 ## Built with
 Kotlin · Android WebView · Fire OS · React · TypeScript · Vite · Supabase (Postgres, Realtime, Storage, Edge Functions) · Deno · Gemini API · Model Context Protocol (TypeScript SDK) · zod · Vercel · Web Speech API · WebAudio · ADB · scrcpy
@@ -84,5 +86,5 @@ Kotlin · Android WebView · Fire OS · React · TypeScript · Vite · Supabase 
 - [ ] **YouTube/Vimeo public video under 3 min** (script: `docs/demo-script.md`)
 - [x] Product feedback for every tool: `docs/product-feedback.md`
 - [x] Feature requests: `docs/feature-requests.md`
-- [x] Friction log (up to +10%): `docs/friction-log.md` (14 entries + seed checks)
+- [x] Friction log (up to +10%): `docs/friction-log.md` (15 entries + seed checks)
 - [ ] Submit on Devpost by **23:30 IST Fri Oct 23** (hard deadline 00:30 IST Sat Oct 24)
