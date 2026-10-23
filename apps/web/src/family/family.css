@@ -150,3 +150,13 @@ body {
 .fam-digest { display: flex; flex-direction: column; gap: 10px; }
 .fam-digest-text { background: linear-gradient(135deg, #fff1e0, #fde7d3); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
 .fam-digest-text p { margin: 0; line-height: 1.45; }
+
+/* Header shortcut to the voice assistant */
+.fam-header-actions { display: flex; align-items: center; gap: 12px; }
+.fam-alexa {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 8px 14px; border-radius: 999px;
+  background: linear-gradient(135deg, #12c8f0, #1a7cff); color: #04101f;
+  font-weight: 800; font-size: 14px; text-decoration: none; white-space: nowrap;
+  box-shadow: 0 2px 10px rgba(26, 124, 255, 0.35);
+}

@@ -1,4 +1,4 @@
-import { NavLink, Navigate, Route, Routes } from 'react-router-dom';
+import { Link, NavLink, Navigate, Route, Routes } from 'react-router-dom';
 import JoinPage from './JoinPage';
 import FeedPage from './FeedPage';
 import SendPage from './SendPage';
@@ -40,16 +40,24 @@ function FamilyShell({ householdId, memberId }: { householdId: string; memberId:
             {elder}'s TV
           </div>
         </div>
-        <button
-          className="fam-link"
-          onClick={() => {
-            if (!confirm('Leave this TV on this phone?')) return;
-            clearFamilySession();
-            window.location.href = '/family/join';
-          }}
-        >
-          Switch
-        </button>
+        <div className="fam-header-actions">
+          <Link
+            className="fam-alexa"
+            to={data.household ? `/assistant?code=${data.household.pair_code}` : '/assistant'}
+          >
+            🎙️ Ask Alexa
+          </Link>
+          <button
+            className="fam-link"
+            onClick={() => {
+              if (!confirm('Leave this TV on this phone?')) return;
+              clearFamilySession();
+              window.location.href = '/family/join';
+            }}
+          >
+            Switch
+          </button>
+        </div>
       </header>
 
       {data.error && <p className="fam-error">{data.error}</p>}
