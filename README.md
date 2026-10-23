@@ -142,6 +142,46 @@ The Back key is delivered to the page as `window` event `nani-back`. The Select 
 - Gemini free-tier models can be overloaded (503) or slow; the functions fall back to other Flash models, then to the original text / a template digest.
 - Reminders and the photo frame run while NaniTV is open; the TV must be on and on the NaniTV app.
 
+## Alexa+ / MCP: "Ask Alexa about Nani"
+Family members can ask a voice assistant *"How is Nani today?"*, *"Any alerts?"* or *"Tell Nani I'll call at 7"*. A message sent this way pops up on the Fire TV in realtime.
+
+```
+[/assistant page]  ── Web Speech API (mic) ──► question
+   │  real MCP client: initialize → tools/list → tools/call   (JSON-RPC over Streamable HTTP)
+   ├──────────────────────────────────────────────► [Vercel /api/mcp]  NaniTV MCP server ──► Supabase ──► Fire TV (realtime)
+   └── tools + conversation ──► [Supabase edge fn assistant-chat] ──► Gemini function calling (key stays server-side)
+```
+
+- **MCP server:** `apps/web/api/mcp.ts`. Official `@modelcontextprotocol/sdk` (1.32), **protocol 2025-11-25**, Streamable HTTP, **stateless** (a fresh server + transport per POST, so it fits a serverless function). zod-validated inputs, friendly tool errors.
+- **Household selection:** the TV's 6-digit pair code in the `x-nani-household` header, or `?household=123456` for clients that can't set headers.
+
+| Tool | What it does |
+|---|---|
+| `get_today_status` | Check-ins, each medicine dose (taken / missed / pending / upcoming), help requests, today's messages + Nani's replies, unread count |
+| `get_alerts` | Help requests, missed medicines, "Call me" replies, no "I'm OK" past the deadline |
+| `send_message_to_elder(text, from_name)` | Inserts a text message (appears on the TV instantly), then runs `simplify-message` |
+| `add_reminder(title, times[])` | Daily medicine reminder, 24-hour `HH:MM` times |
+| `get_daily_digest(date?)` | Runs the `daily-digest` AI summary |
+
+- **`/assistant` page** (`apps/web/src/assistant`): big mic button (Web Speech API, typed fallback), real MCP client (`src/lib/mcpClient.ts`, plain `fetch`), Gemini function calling via the `assistant-chat` edge function, spoken answers (`speechSynthesis`). It has an **Under the hood** panel with every raw JSON-RPC request/response. `/assistant?code=123456` opens a household directly.
+
+### Connect other MCP clients
+**MCP Inspector**
+```bash
+npx @modelcontextprotocol/inspector
+```
+Transport **Streamable HTTP**, URL `https://nanitv.vercel.app/api/mcp`. Under *Authentication → Custom headers* add `x-nani-household: <pair code>`, or just use `https://nanitv.vercel.app/api/mcp?household=<pair code>`. Then **Connect → Tools → List Tools → Run**.
+
+**Claude (custom connector)**: Settings → Connectors → *Add custom connector* → URL `https://nanitv.vercel.app/api/mcp?household=<pair code>` (no OAuth). Ask Claude "How is Nani today?".
+
+**Local development**
+```bash
+npm run mcp:local          # the same function on http://localhost:3333/api/mcp (Vite proxies /api to it)
+npx tsx scripts/assistant-test.ts "Any alerts for Nani?"   # end-to-end: MCP client → server → Gemini
+```
+
+> **Security note (hackathon scope):** the pair code acts as a bearer secret and the server uses the public anon key. A production version would add OAuth (MCP authorization spec) and per-household RLS before connecting real assistants.
+
 ## Open source: firetv-web-shell
 The Fire TV shell and the D-pad focus hook are extracted into a standalone MIT template, **[firetv-web-shell](https://github.com/sarthak115/firetv-web-shell)**. It covers the leanback banner, Back→JS, Select→Enter, a TTS bridge with the Fire OS 5 Pico fallback, debug LAN URL + release URL, `focus.ts` / `useFocusGroup.ts`, and a 5-minute quickstart verified on a Fire TV Stick.
 

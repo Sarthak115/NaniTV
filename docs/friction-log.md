@@ -112,3 +112,21 @@ Dev machine: Windows 11, Android Studio, Java 17, Gradle 8.11.1, AGP 8.7.3.
 - Severity: Minor
 - Workaround used: `html, body { overflow: hidden }` and measure `clientWidth`/`clientHeight`. Documented in the template's README.
 - Actionable suggestion: (Fire TV web docs) recommend a canonical "design at 1080p and scale" snippet for WebView apps, including the viewport/overview-mode settings it assumes.
+
+### FL-13: Alexa+ developer tooling is partner-only, so we built an Alexa+-style MCP integration instead
+- Task attempted: Let family members ask Alexa "How is Nani today?" or "Tell Nani I'll call at 7", backed by NaniTV data, as an Alexa+ integration.
+- Steps taken: Looked for a public way to expose NaniTV actions to Alexa+ (the new agentic Alexa).
+- Expected: A self-serve path for indie developers, e.g. register an MCP server or API as an Alexa+ action, with a simulator to test it.
+- Actual: At the time of the hackathon, the tooling for connecting third-party services to Alexa+ was in a partner-only preview, with no self-serve sign-up for a solo developer. (Verify current status before relying on this.) Classic custom skills (ASK) still work, but they're intent/slot based rather than agentic tool calling, and are a different product from Alexa+.
+- Severity: Major (for the "Alexa" part of the idea)
+- Workaround used: Built the integration on the open standard Alexa+ is expected to consume. NaniTV exposes a real **MCP server** (`/api/mcp`, protocol 2025-11-25, Streamable HTTP, stateless on Vercel) with five tools, plus an **Alexa-style web assistant** (`/assistant`): mic → real MCP client → Gemini function calling → spoken answer. It works today with MCP Inspector and Claude as a custom connector, and would plug into Alexa+ once tooling opens up.
+- Actionable suggestion: Open an Alexa+ developer preview to individual developers, ideally "point Alexa+ at an MCP server URL", with a test console, so hackathon projects can ship real Alexa+ experiences.
+
+### FL-14: Vercel preview deployments are login-protected by default, which blocks testing a public MCP endpoint
+- Task attempted: Test the MCP server on a Vercel **preview** before touching production.
+- Steps taken: `vercel deploy` (preview), then POSTed JSON-RPC to `/api/mcp`.
+- Expected: A reachable preview URL, or a clear way to authenticate a machine client.
+- Actual: `401 Protected by Vercel Authentication` for every request; MCP clients can't complete the SSO redirect. `vercel curl --deployment <url>` worked, but it silently **generated a protection-bypass token on the project** as a side effect.
+- Severity: Minor
+- Workaround used: Tested the deployed function through `vercel curl`, tested the UI locally with a real Chrome (puppeteer-core) against the same code, and left production untouched until review.
+- Actionable suggestion: (Vercel) Ask before creating a persistent bypass token, and document a recommended pattern for exposing `/api/*` on protected previews to non-browser clients like MCP.
