@@ -143,7 +143,7 @@ The Back key is delivered to the page as `window` event `nani-back`. The Select 
 - Reminders and the photo frame run while NaniTV is open; the TV must be on and on the NaniTV app.
 
 ## Open source: firetv-web-shell
-The Fire TV shell and the D-pad focus hook are extracted into a standalone MIT template, **firetv-web-shell** (`https://github.com/<you>/firetv-web-shell`). It covers the leanback banner, Back→JS, Select→Enter, a TTS bridge with the Fire OS 5 Pico fallback, debug LAN URL + release URL, `focus.ts` / `useFocusGroup.ts`, and a 5-minute quickstart verified on a Fire TV Stick.
+The Fire TV shell and the D-pad focus hook are extracted into a standalone MIT template, **[firetv-web-shell](https://github.com/sarthak115/firetv-web-shell)**. It covers the leanback banner, Back→JS, Select→Enter, a TTS bridge with the Fire OS 5 Pico fallback, debug LAN URL + release URL, `focus.ts` / `useFocusGroup.ts`, and a 5-minute quickstart verified on a Fire TV Stick.
 
 ## License
 MIT
