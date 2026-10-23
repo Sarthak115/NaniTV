@@ -130,3 +130,21 @@ Dev machine: Windows 11, Android Studio, Java 17, Gradle 8.11.1, AGP 8.7.3.
 - Severity: Minor
 - Workaround used: Tested the deployed function through `vercel curl`, tested the UI locally with a real Chrome (puppeteer-core) against the same code, and left production untouched until review.
 - Actionable suggestion: (Vercel) Ask before creating a persistent bypass token, and document a recommended pattern for exposing `/api/*` on protected previews to non-browser clients like MCP.
+
+---
+
+## Seed checks: things we expected to hurt (honest status)
+These were on our "probably painful" list before the build. Recorded so the log reflects what actually happened, not what we assumed.
+
+| Topic | Status | Notes |
+|---|---|---|
+| Enabling Developer Options / ADB on Fire TV | Not timed | ADB debugging was already on before this build. The only ADB friction was the on-TV authorisation prompt (FL-1), which reappeared once after the laptop's ADB server restarted. |
+| ADB auth prompt over Wi-Fi | Hit | FL-1. |
+| PG/hostel network isolation (client isolation blocks phone↔TV↔laptop) | Not hit | Built on a home router where laptop, TV and phones can see each other. On isolated networks the LAN dev loop (debug shell → laptop Vite) would fail; the release APK + Vercel avoids the LAN entirely. Documented as a risk in the README quickstart. |
+| WebView autoplay (chimes, voice notes) | Worked | With `mediaPlaybackRequiresUserGesture = false`, WebAudio chimes and `<audio autoplay>` voice notes played on Fire OS 5 without any user gesture. `canPlayType` reported `probably` for webm/opus, ogg/opus and mp4/AAC. |
+| D-pad Select → Enter | Worked | FL-5. Select arrived as `Enter` (13); we still remap `DPAD_CENTER` as a safety net. |
+| Back key in WebView | Hit | FL-5 (never reaches the page by default). |
+| Hindi TTS on the stick | Hit | FL-2, FL-3, FL-4. |
+| Overlay / notification over other apps (Netflix, YouTube) | Not tested | We did not have time to test an Android notification while another app was in the foreground. NaniTV is designed as the TV's "companion channel": reminders fire while NaniTV is open. Stated as a limitation in the README. |
+| Amazon Devices Builder Tools MCP with Claude Code | Not used | We didn't set it up during the build; device questions were answered by testing on the stick (`adb logcat`, `screencap`, `input keyevent`). We can't give feedback on it beyond "we didn't reach for it under time pressure". |
+| Fire TV screensaver over the app | Seen once, unconfirmed | The screensaver appeared once while NaniTV was open even though the shell sets `FLAG_KEEP_SCREEN_ON`. It may have started before the app was relaunched; we didn't see it again in later sessions. |

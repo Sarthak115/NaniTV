@@ -185,5 +185,11 @@ npx tsx scripts/assistant-test.ts "Any alerts for Nani?"   # end-to-end: MCP cli
 ## Open source: firetv-web-shell
 The Fire TV shell and the D-pad focus hook are extracted into a standalone MIT template, **[firetv-web-shell](https://github.com/sarthak115/firetv-web-shell)**. It covers the leanback banner, Back→JS, Select→Enter, a TTS bridge with the Fire OS 5 Pico fallback, debug LAN URL + release URL, `focus.ts` / `useFocusGroup.ts`, and a 5-minute quickstart verified on a Fire TV Stick.
 
+## Docs
+- [Friction log](docs/friction-log.md): 14 entries from building on a real Fire TV Stick, plus honest seed checks
+- [Product feedback](docs/product-feedback.md): Fire TV, Builder Tools MCP, Supabase, Gemini, Vercel, scrcpy
+- [Feature requests](docs/feature-requests.md)
+- [Demo script](docs/demo-script.md) · [Devpost submission](docs/devpost-submission.md)
+
 ## License
 MIT
