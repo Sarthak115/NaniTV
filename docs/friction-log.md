@@ -103,3 +103,12 @@ Dev machine: Windows 11, Android Studio, Java 17, Gradle 8.11.1, AGP 8.7.3.
 - Severity: Major (production broken, error only visible via logcat)
 - Workaround used: Re-added the vars with `--value "<v>" --type config --yes` (no stdin), then redeployed with `--force`. Verified the bundle no longer contains `\uFEFF`.
 - Actionable suggestion: (Vercel) Strip a leading BOM from stdin, as you already do for trailing newlines. (Fire TV) The release WebView gives no on-screen hint, so keep console→logcat mirroring even in release shells.
+
+### FL-12: `window.innerWidth` reports 1920 inside the WebView when the page overflows
+- Task attempted: Scale a fixed 1920×1080 "TV stage" to the screen in the plain-HTML example for the open-source `firetv-web-shell` template.
+- Steps taken: `scale(min(innerWidth/1920, innerHeight/1080))` with an absolutely positioned 1920px stage, shell using `useWideViewPort = true` + `loadWithOverviewMode = true`.
+- Expected: `innerWidth` = 960 (the stick's CSS viewport), so scale = 0.5.
+- Actual: `innerWidth` = 1920 and `document.documentElement.clientWidth` = 960 (logged via logcat). The overflowing stage widened the layout viewport, so the scale computed to 1 and the TV showed a 2× zoomed corner of the page. NaniTV didn't hit this only because its root happened to be `position: fixed; overflow: hidden`.
+- Severity: Minor
+- Workaround used: `html, body { overflow: hidden }` and measure `clientWidth`/`clientHeight`. Documented in the template's README.
+- Actionable suggestion: (Fire TV web docs) recommend a canonical "design at 1080p and scale" snippet for WebView apps, including the viewport/overview-mode settings it assumes.
